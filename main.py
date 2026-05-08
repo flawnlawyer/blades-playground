@@ -10,13 +10,17 @@ Run:
 
 Controls:
     WASD / Arrow keys   Move
+    SHIFT               Dash
     SPACE               Hack nearby objects / stun enemies
+    1-5                 Select weapon
+    LMB                 Fire
     M                   Toggle mute
     R                   Reboot (after game over)
     ESC                 Quit
 """
 
 import sys
+from pathlib import Path
 import pygame
 
 from game.constants import W, H
@@ -25,8 +29,17 @@ from game.game      import Game
 
 def main() -> None:
     pygame.init()
-    pygame.display.set_mode((W, H))
+    screen = pygame.display.set_mode((W, H))
     pygame.display.set_caption("The Blade's Playground")
+
+    # Window icon
+    logo_path = Path(__file__).parent / "assets" / "logo.png"
+    if logo_path.exists():
+        try:
+            icon = pygame.image.load(str(logo_path))
+            pygame.display.set_icon(icon)
+        except Exception:
+            pass
 
     try:
         game = Game()
