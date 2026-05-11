@@ -1,5 +1,7 @@
 # ── Window & timing ───────────────────────────────────────────────────────────
-W, H   = 1280, 720
+LOGICAL_W, LOGICAL_H = 1280, 720   # fixed internal rendering resolution
+W, H   = LOGICAL_W, LOGICAL_H      # aliases used everywhere
+MIN_W, MIN_H = 960, 540            # minimum window size
 FPS    = 60
 TILE   = 40
 
