@@ -29,13 +29,28 @@ _PARTICLE_CAP = 200
 
 
 class Game:
-    def __init__(self) -> None:
-        self.screen   = pygame.display.get_surface()
+    """
+    Core gameplay logic.  Owns all entities, physics, and rendering.
+    Used by PlayState — does NOT own the main loop or the display surface.
+    """
+
+    def __init__(self, manager=None) -> None:
+        self.manager  = manager
         self.clock    = pygame.time.Clock()
         self.audio    = SoundManager()
         self.ui       = UI()
         self.renderer = Renderer()
         self.wave_mgr = WaveManager()
+
+        # Logical mouse position (set by PlayState each frame)
+        self._logical_mouse = (W // 2, H // 2)
+
+        # Flag so PlayState pushes GameOverState only once
+        self._gameover_handled = False
+
+        # Track dt for wave banner (since we don't tick our own clock)
+        self._last_dt = 0.016
+
         self._reset()
 
     # ── Spawn helpers ─────────────────────────────────────────────────────────
@@ -93,6 +108,7 @@ class Game:
         self.frag_text   = ""
         self.frag_timer  = 0.0
         self.game_over   = False
+        self._gameover_handled = False
         self.run_time    = 0.0
         self.wave_mgr    = WaveManager()
         self.wave_mgr.start()
@@ -143,21 +159,19 @@ class Game:
 
     def update(self, dt: float) -> None:
         self.run_time    += dt
+        self._last_dt     = dt
         keys              = pygame.key.get_pressed()
-        mouse_pos         = pygame.mouse.get_pos()
+        mouse_pos         = self._logical_mouse
         mouse_buttons     = pygame.mouse.get_pressed()
         p                 = self.player
 
-        # FIX B-01: correct 5-argument call
         p.update(keys, dt, mouse_pos, mouse_buttons, self.enemies)
 
         if p._chaos_just_ended:
             self.audio.chaos_end()
 
-        # FIX C-08: live drone pitch update
         self.audio.update_drone(p.energy / p.max_energy, p.chaos_mode)
 
-        # FIX B-03: consume new projectiles
         if p.new_projectiles:
             self.projectiles.extend(p.new_projectiles)
             wi = p.weapon_index
@@ -166,17 +180,14 @@ class Game:
             elif wi == 4: self.audio.bomb_launch()
             p.new_projectiles.clear()
 
-        # FIX C-10: DashTrail particles while dashing
         if p.is_dashing:
             col = CHAOS_COL if p.chaos_mode else PLAYER_COL
             if len(self.particles) < _PARTICLE_CAP:
                 self.particles.append(DashTrail(p.pos.x, p.pos.y, col, p.radius))
 
-        # Update all projectiles
         for proj in self.projectiles:
             proj.update(dt)
 
-        # FIX B-03 (collision): projectiles vs enemies and boss
         dead_projs = set()
         for i, proj in enumerate(self.projectiles):
             if not proj.alive:
@@ -203,7 +214,6 @@ class Game:
                     proj.alive = False
                     dead_projs.add(i)
 
-        # FIX B-04: chain zap targets
         if p.chain_targets:
             prev_pos = pygame.Vector2(p.pos)
             for target in p.chain_targets:
@@ -216,7 +226,6 @@ class Game:
             self.audio.chain_zap()
             p.chain_targets.clear()
 
-        # Null beam hits boss too
         if p.beam_active:
             self.audio.beam_hum()
             if self.boss:
@@ -244,7 +253,6 @@ class Game:
 
         if self.boss:
             self.boss.update(dt, p.pos)
-            # FIX B-13: consume boss spawn_queue
             for item in self.boss.spawn_queue:
                 self._spawn_entity(item[0], item[1], item[2])
             self.boss.spawn_queue.clear()
@@ -364,11 +372,10 @@ class Game:
                     self.shake      = 12
                     self.audio.player_hit()
                     self._burst(int(p.pos.x), int(p.pos.y), ENEMY_COL, 18)
-                    self.renderer.trigger_flash((210, 45, 75))   # FIX B-07
+                    self.renderer.trigger_flash((210, 45, 75))
                     push = (p.pos - e.pos)
                     if push.length_squared() > 0:
                         p.pos += push.normalize() * 70
-                        # FIX B-12: clamp after push
                         p.pos.x = max(p.radius, min(W - p.radius, p.pos.x))
                         p.pos.y = max(p.radius, min(H - p.radius, p.pos.y))
                     if self.hp <= 0:
@@ -403,14 +410,18 @@ class Game:
 
     # ── Draw ──────────────────────────────────────────────────────────────────
 
-    def draw(self) -> None:
+    def draw(self, surf: pygame.Surface = None) -> None:
+        """Render the game world onto *surf* (the logical surface)."""
+        if surf is None:
+            surf = pygame.display.get_surface()
+
         ox, oy = 0, 0
         if self.shake:
             ox = random.randint(-self.shake, self.shake)
             oy = random.randint(-self.shake, self.shake)
 
-        self.renderer.draw_background(self.screen, self.player.chaos_mode)
-        self.renderer.draw_glitch_lines(self.screen)
+        self.renderer.draw_background(surf, self.player.chaos_mode)
+        self.renderer.draw_glitch_lines(surf)
 
         world = pygame.Surface((W, H), pygame.SRCALPHA)
         for b    in self.meh_blocks:  b.draw(world, self.ui.font_s)
@@ -421,68 +432,33 @@ class Game:
         if self.boss:
             self.boss.draw(world)
         self.player.draw(world)
-        self.screen.blit(world, (ox, oy))
+        surf.blit(world, (ox, oy))
 
         if self.player.chaos_mode:
-            self.renderer.draw_chromatic(self.screen)
+            self.renderer.draw_chromatic(surf)
 
-        # FIX B-06: vignette + scanlines (pre-baked, free)
-        self.renderer.draw_vignette(self.screen)
-        self.renderer.draw_scanlines(self.screen)
+        self.renderer.draw_vignette(surf)
+        self.renderer.draw_scanlines(surf)
+        self.renderer.draw_flash(surf)
 
-        # FIX B-07: screen flash on hit
-        self.renderer.draw_flash(self.screen)
-
-        # FIX B-10: wave argument
-        self.ui.draw_hud(self.screen, self.player, self.hp,
+        self.ui.draw_hud(surf, self.player, self.hp,
                          self.score, self.run_time, self.wave_mgr.wave)
 
         if self.boss:
-            self.ui.draw_boss_bar(self.screen, self.boss)
+            self.ui.draw_boss_bar(surf, self.boss)
 
-        self.ui.draw_wave_banner(self.screen, self.clock.get_time() / 1000.0)
-        self.ui.draw_fragment_popup(self.screen, self.frag_text,
+        self.ui.draw_wave_banner(surf, self._last_dt)
+        self.ui.draw_fragment_popup(surf, self.frag_text,
                                     self.frag_timer, FRAG_POPUP_DURATION)
-        self.ui.draw_controls_hint(self.screen, self.run_time)
-        self.ui.draw_mute_indicator(self.screen, self.audio.muted)
+        self.ui.draw_controls_hint(surf, self.run_time)
+        self.ui.draw_mute_indicator(surf, self.audio.muted)
 
-        # FIX B-18: crosshair
-        mx, my = pygame.mouse.get_pos()
-        self.ui.draw_crosshair(self.screen, (mx, my),
+        # Crosshair at logical mouse position
+        mx, my = self._logical_mouse
+        self.ui.draw_crosshair(surf, (mx, my),
                                WEAPON_COLORS[self.player.weapon_index])
 
-        if self.game_over:
-            self.ui.draw_game_over(self.screen, self.score)
-
-    # ── Main loop ─────────────────────────────────────────────────────────────
-
-    def run(self) -> None:
-        pygame.mouse.set_visible(False)
-        while True:
-            dt = self.clock.tick(FPS) / 1000.0
-
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.mouse.set_visible(True)
-                    return
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        pygame.mouse.set_visible(True)
-                        return
-                    if event.key == pygame.K_SPACE and not self.game_over:
-                        self._do_hack()
-                    if event.key == pygame.K_r and self.game_over:
-                        self._reset()
-                    if event.key == pygame.K_m:
-                        self.audio.toggle_mute()
-                    # FIX B-05: dash on SHIFT
-                    if event.key in (pygame.K_LSHIFT, pygame.K_RSHIFT):
-                        if not self.game_over:
-                            if self.player.trigger_dash(pygame.key.get_pressed()):
-                                self.audio.dash()
-
-            if not self.game_over:
-                self.update(dt)
-
-            self.draw()
-            pygame.display.flip()
+        # Game-over overlay is handled by GameOverState;
+        # only show it if we're NOT using the state manager
+        if self.game_over and self.manager is None:
+            self.ui.draw_game_over(surf, self.score)
