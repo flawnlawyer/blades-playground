@@ -29,12 +29,14 @@ class UI:
     # ── Main HUD ─────────────────────────────────────────────────────────────
 
     def draw_hud(self, surf: pygame.Surface, player, hp: int, score: int,
-                 run_time: float, wave: int) -> None:
+                 run_time: float, wave: int, wave_mgr=None) -> None:
         self._draw_energy_bar(surf, player)
         self._draw_hp_pips(surf, hp)
         self._draw_score_time(surf, score, run_time, wave)
         self._draw_hack_prompt(surf, player)
         self._draw_weapon_bar(surf, player)
+        if wave_mgr and wave_mgr.in_break and wave_mgr.wave > 0:
+            self._draw_wave_break(surf, wave_mgr.break_countdown)
         if player.chaos_mode:
             self._draw_chaos_banner(surf, player)
 
@@ -135,6 +137,18 @@ class UI:
             f"// CHAOS MODE  {player.chaos_timer:.1f}s", True, CHAOS_COL)
         sx = W // 2 - txt.get_width() // 2
         surf.blit(txt, (sx, 14))
+
+    def _draw_wave_break(self, surf: pygame.Surface, countdown: float) -> None:
+        """Pulsing countdown shown between waves."""
+        import math
+        pulse = 0.5 + 0.5 * math.sin(countdown * 6)
+        col = tuple(int(c * (0.7 + 0.3 * pulse)) for c in (0, 200, 160))
+        txt = self.font_l.render(
+            f"NEXT WAVE IN: {max(0, countdown):.1f}s", True, col)
+        s = pygame.Surface(txt.get_size(), pygame.SRCALPHA)
+        s.blit(txt, (0, 0))
+        s.set_alpha(int(180 + 75 * pulse))
+        surf.blit(s, (W // 2 - s.get_width() // 2, 14))
 
     # ── Boss HP bar ───────────────────────────────────────────────────────────
 
