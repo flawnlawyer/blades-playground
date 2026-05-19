@@ -442,7 +442,8 @@ class Game:
         self.renderer.draw_flash(surf)
 
         self.ui.draw_hud(surf, self.player, self.hp,
-                         self.score, self.run_time, self.wave_mgr.wave)
+                         self.score, self.run_time, self.wave_mgr.wave,
+                         wave_mgr=self.wave_mgr)
 
         if self.boss:
             self.ui.draw_boss_bar(surf, self.boss)
