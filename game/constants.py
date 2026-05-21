@@ -78,10 +78,16 @@ CHAOS_SPEED_MULT    = 1.9
 HACK_RANGE_NORMAL   = 90
 HACK_RANGE_CHAOS    = 150
 
-# Dash
-PLAYER_DASH_SPEED   = 22.0
-PLAYER_DASH_FRAMES  = 8      # frames the dash lasts
-PLAYER_DASH_CD      = 1.2
+# Dash — 2 charges
+PLAYER_DASH_SPEED      = 22.0
+PLAYER_DASH_FRAMES     = 8
+PLAYER_DASH_CD         = 1.2   # kept for back-compat; use charge system
+PLAYER_DASH_CHARGES    = 2     # max number of dash charges
+PLAYER_DASH_CHARGE_CD  = 1.2   # seconds per charge recharge
+
+# Acceleration model
+PLAYER_ACCEL           = 0.20  # lerp factor toward target velocity (per frame)
+PLAYER_DECEL           = 0.26  # lerp factor when no input
 
 # Blocks
 MEH_DEFAULT_HP      = 2
@@ -133,6 +139,15 @@ ENEMY_SPAWN_MIN     = 4
 FRAG_POPUP_DURATION = 2.8
 CONTROLS_FADE_TIME  = 12.0
 
+# ── Kill Streak ───────────────────────────────────────────────────────────────
+STREAK_RESET_TIME   = 4.0    # seconds without a kill before streak resets
+STREAK_THRESHOLDS   = [5, 10, 20]        # kill counts that change multiplier
+STREAK_MULTIPLIERS  = [1.0, 1.5, 2.0, 3.0]  # multiplier at each tier
+
+# ── Death slow-motion ─────────────────────────────────────────────────────────
+DEATH_SLOW_FACTOR   = 0.12   # fraction of normal speed
+DEATH_SLOW_DURATION = 0.55   # real seconds of slow-mo
+
 # ── Weapons ───────────────────────────────────────────────────────────────────
 WEAPON_NAMES   = ["PLASMA BOLT", "VOID SPREAD", "CHAIN ZAP", "NULL BEAM", "CHAOS BOMB"]
 WEAPON_COLORS  = [PLASMA_COL, SPREAD_COL, CHAIN_COL, BEAM_COL, BOMB_COL]
@@ -167,3 +182,40 @@ WAVE_BREAK_DURATION = 4.0
 
 # ── Audio ─────────────────────────────────────────────────────────────────────
 MASTER_VOLUME   = 0.55
+
+# ── New Enemy Types ───────────────────────────────────────────────────────────
+# Berserker
+BERSERKER_RADIUS       = 16
+BERSERKER_HP           = 5
+BERSERKER_SPEED        = 1.0
+BERSERKER_RAGE_SPEED   = 3.8
+BERSERKER_SCORE        = 80
+BERSERKER_RAGE_HP_THRESH = 0.5   # % HP below which rage triggers
+
+# Teleporter
+TELEPORTER_RADIUS      = 12
+TELEPORTER_HP          = 2
+TELEPORTER_BLINK_CD    = 2.5
+TELEPORTER_BLINK_RANGE = 200
+TELEPORTER_VULN_TIME   = 0.5    # seconds after blink during which it takes damage
+TELEPORTER_SCORE       = 70
+
+# Shield Drone
+SHIELD_DRONE_RADIUS    = 9
+SHIELD_DRONE_HP        = 1
+SHIELD_DRONE_ORBIT_R   = 48
+SHIELD_DRONE_ORBIT_SPD = 1.8
+SHIELD_DRONE_SCORE     = 45
+
+# Splitter
+SPLITTER_RADIUS        = 15
+SPLITTER_HP            = 3
+SPLITTER_SCORE         = 50
+SPLITTER_SPEED         = 1.8
+
+# New enemy colors
+BERSERKER_COL    = (255,  80,  30)
+BERSERKER_RAGE_COL = (255, 20, 20)
+TELEPORTER_COL  = (80, 255, 200)
+SHIELD_COL      = (100, 200, 255)
+SPLITTER_COL    = (200, 150, 255)
