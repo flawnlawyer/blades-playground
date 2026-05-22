@@ -12,6 +12,8 @@ Usage:
     manager.run()
 """
 from __future__ import annotations
+from typing import Optional
+
 import pygame
 
 from game.constants import LOGICAL_W, LOGICAL_H, MIN_W, MIN_H, FPS
@@ -113,7 +115,7 @@ class StateManager:
         self._offset_y = (sh - scaled_h) // 2
         self._scaled_size = (scaled_w, scaled_h)
 
-    def mouse_to_logical(self, real_pos: tuple = None) -> tuple[int, int]:
+    def mouse_to_logical(self, real_pos: Optional[tuple[int, int]] = None) -> tuple[int, int]:
         """Convert real screen mouse position → logical coordinates."""
         if real_pos is None:
             real_pos = pygame.mouse.get_pos()
