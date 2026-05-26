@@ -247,7 +247,7 @@ class Enemy(_BaseEnemy):
     def draw(self, surf: pygame.Surface) -> None:
         col = (80, 80, 100) if self.stunned else ENEMY_COL
         cx  = int(self.pos[0]) + self._glitch[0]
-        cy  = int(self.pos.y) + self._glitch[1]
+        cy  = int(self.pos[1]) + self._glitch[1]
         r   = self.radius
         if not self.stunned:
             gr = r + int(abs(math.sin(self._phase)) * 5)
@@ -329,8 +329,8 @@ class SwarmNode(_BaseEnemy):
 
     def draw(self, surf: pygame.Surface) -> None:
         col = (80, 80, 100) if self.stunned else SWARM_COL
-        cx  = int(self.pos.x) + self._glitch[0]
-        cy  = int(self.pos.y) + self._glitch[1]
+        cx  = int(self.pos[0]) + self._glitch[0]
+        cy  = int(self.pos[1]) + self._glitch[1]
         r   = self.radius
         if not self.stunned:
             glow_circle(surf, SWARM_COL, (cx, cy), r + 6, 28)
@@ -374,8 +374,8 @@ class Phantom(_BaseEnemy):
     def draw(self, surf: pygame.Surface) -> None:
         pulse_a = int(120 + 50 * abs(math.sin(self._phase * 0.7)))
         col     = (*PHANTOM_COL, pulse_a)
-        cx  = int(self.pos.x) + self._glitch[0]
-        cy  = int(self.pos.y) + self._glitch[1]
+        cx  = int(self.pos[0]) + self._glitch[0]
+        cy  = int(self.pos[1]) + self._glitch[1]
         r   = self.radius
         s   = pygame.Surface((r * 2 + 20, r * 2 + 20), pygame.SRCALPHA)
         # Octagon
@@ -453,8 +453,9 @@ class Boss(_BaseEnemy):
                     self.spawn_queue.append(("swarm", sx, sy))
 
     def draw(self, surf: pygame.Surface) -> None:
-        cx = int(self.pos.x) + self._glitch[0]
-        cy = int(self.pos.y) + self._glitch[1]
+        px, py = self.pos
+        cx = int(px) + self._glitch[0]
+        cy = int(py) + self._glitch[1]
         r  = self.radius
         col = BOSS_COL
 
