@@ -73,13 +73,18 @@ class Game:
             y = random.randint(80, H - 80)
             self.fragments.append(Fragment(x, y, pool[i]))
 
-    def _spawn_entity(self, etype: str, x: float = None, y: float = None) -> None:
+    def _spawn_entity(self, etype: str, x: float | None = None, y: float | None = None) -> None:
         if x is None or y is None:
             for _ in range(50):
-                x = random.randint(60, W - 60)
-                y = random.randint(60, H - 60)
+                x = float(random.randint(60, W - 60))
+                y = float(random.randint(60, H - 60))
                 if pygame.Vector2(x, y).distance_to(self.player.pos) > 180:
                     break
+        # Ensure x and y are floats (type-checkers may still consider them Optional)
+        if x is None:
+            x = float(random.randint(60, W - 60))
+        if y is None:
+            y = float(random.randint(60, H - 60))
         if etype == "standard":
             self.enemies.append(Enemy(x, y))
         elif etype == "hunter":
@@ -205,7 +210,8 @@ class Game:
                     dead_projs.add(i)
                     break
             if self.boss and i not in dead_projs:
-                if self.boss.pos.distance_to(proj.pos) < self.boss.radius + proj.radius:
+                # Use vector math directly to avoid attribute access issues
+                if (self.boss.pos - proj.pos).length() < self.boss.radius + proj.radius:
                     killed = self.boss.take_damage(proj.damage)
                     self._burst(int(proj.pos.x), int(proj.pos.y), proj.color, 8, (1, 5))
                     self.audio.boss_hit()
@@ -230,16 +236,16 @@ class Game:
             self.audio.beam_hum()
             if self.boss:
                 from game.constants import BEAM_DAMAGE_PS
-                ex   = self.boss.pos.x - p.pos.x
-                ey   = self.boss.pos.y - p.pos.y
-                dist = math.hypot(ex, ey)
+                offset = self.boss.pos - p.pos
+                dist   = offset.length()
                 if dist < 500:
-                    e_angle  = math.atan2(ey, ex)
+                    e_angle  = math.atan2(offset.y, offset.x)
                     diff     = abs(math.atan2(
                         math.sin(e_angle - p._angle),
                         math.cos(e_angle - p._angle)))
                     if diff < 0.18:
-                        if self.boss.take_damage(BEAM_DAMAGE_PS * dt):
+                        # take_damage expects an int; convert floating DPS*dt to int
+                        if self.boss.take_damage(int(BEAM_DAMAGE_PS * dt)):
                             self._on_boss_killed()
                         else:
                             self.audio.boss_hit()
@@ -291,7 +297,7 @@ class Game:
             if e.pos.distance_to(proj.pos) < BOMB_RADIUS:
                 if e.take_damage(BOMB_DAMAGE):
                     self._on_enemy_killed(e)
-        if self.boss and self.boss.pos.distance_to(proj.pos) < BOMB_RADIUS:
+        if self.boss and (self.boss.pos - proj.pos).length() < BOMB_RADIUS:
             if self.boss.take_damage(BOMB_DAMAGE):
                 self._on_boss_killed()
             else:
@@ -307,9 +313,11 @@ class Game:
             self.enemies.remove(e)
 
     def _on_boss_killed(self) -> None:
-        if self.boss is None:
+        boss = self.boss
+        if boss is None:
             return
-        bx, by = int(self.boss.pos.x), int(self.boss.pos.y)
+        pos = boss.pos
+        bx, by = int(pos.x), int(pos.y)
         self._burst(bx, by, (0, 220, 255), 50, (3, 12))
         self._ring(bx, by, (0, 220, 255), 20, 200, 0.8)
         self.score += BOSS_SCORE_REWARD
@@ -382,8 +390,10 @@ class Game:
                         self.game_over = True
                         self.audio.game_over()
 
-        if self.boss and not self.boss.stunned:
-            if self.boss.pos.distance_to(p.pos) < self.boss.radius + p.radius:
+        if self.boss and not self.boss.stunned and hasattr(self.boss, 'pos'):
+            # use squared-length check to avoid relying on distance_to attribute
+            push_vec = self.boss.pos - p.pos
+            if push_vec.length_squared() < (self.boss.radius + p.radius) ** 2:
                 if p.chaos_mode:
                     self._on_boss_killed()
                 elif p.inv_timer <= 0:
@@ -410,7 +420,7 @@ class Game:
 
     # ── Draw ──────────────────────────────────────────────────────────────────
 
-    def draw(self, surf: pygame.Surface = None) -> None:
+    def draw(self, surf: pygame.Surface | None = None) -> None:
         """Render the game world onto *surf* (the logical surface)."""
         if surf is None:
             surf = pygame.display.get_surface()
