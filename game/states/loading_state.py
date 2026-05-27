@@ -220,18 +220,22 @@ class LoadingState(BaseState):
 
         # Status text
         pct = int(self._progress * 100)
-        txt = self._font.render(
-            f"{self._status_msg}  {pct}%", True, DIM)
-        surf.blit(txt, (W // 2 - txt.get_width() // 2, bar_y + self._BAR_H + 10))
+        if self._font is not None:
+            txt = self._font.render(
+                f"{self._status_msg}  {pct}%", True, DIM)
+            surf.blit(txt, (W // 2 - txt.get_width() // 2, bar_y + self._BAR_H + 10))
 
         # Tagline fading in after 1.5s
         if self._timer > 1.5:
             tag_a = min(255, int(255 * (self._timer - 1.5) / 0.8))
-            tag = self._font_small.render(
-                "FIGHT. ADAPT. BREAK. BECOME.", True, (210, 45, 75))
-            tag.set_alpha(tag_a)
-            surf.blit(tag, (W // 2 - tag.get_width() // 2,
-                            bar_y + self._BAR_H + 32))
+            # _font_small may be None in some static-analysis paths; fall back to _font
+            font_small = self._font_small or self._font
+            if font_small is not None:
+                tag = font_small.render(
+                    "FIGHT. ADAPT. BREAK. BECOME.", True, (210, 45, 75))
+                tag.set_alpha(tag_a)
+                surf.blit(tag, (W // 2 - tag.get_width() // 2,
+                                bar_y + self._BAR_H + 32))
 
         # Pre-baked vignette
         if self._vignette:
