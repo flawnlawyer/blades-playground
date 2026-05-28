@@ -141,6 +141,12 @@ class MenuState(BaseState):
             self._glitch_lines = []
 
     def draw(self, surf: pygame.Surface) -> None:
+        # Ensure fonts exist (draw may be called before on_enter)
+        if self._font_item is None or self._font_small is None or self._font_tag is None:
+            self._font_item  = pygame.font.SysFont("monospace", 22, bold=True)
+            self._font_small = pygame.font.SysFont("monospace", 11)
+            self._font_tag   = pygame.font.SysFont("monospace", 13)
+
         surf.fill(BG)
 
         # Grid
