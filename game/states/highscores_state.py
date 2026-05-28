@@ -57,7 +57,9 @@ class HighScoresState(BaseState):
             pygame.draw.line(surf, GRID_DIM, (0, y), (W, y))
 
         # Title
-        title = self._font_title.render("// HIGH SCORES //", True, (210, 45, 75))
+        # _font_title should be set in on_enter(), but guard for static analysis/runtime
+        font_title = self._font_title or pygame.font.SysFont("monospace", 28, bold=True)
+        title = font_title.render("// HIGH SCORES //", True, (210, 45, 75))
         surf.blit(title, (W // 2 - title.get_width() // 2, 40))
 
         # Decorative line
@@ -80,19 +82,21 @@ class HighScoresState(BaseState):
         # Header
         headers = [("RANK", 0), ("NAME", 60), ("SCORE", 240),
                    ("WAVE", 360), ("TIME", 440)]
-        for text, offset in headers:
-            txt = self._font_head.render(text, True, ACCENT)
-            surf.blit(txt, (table_x + offset, head_y))
+        if self._font_head:
+            for text, offset in headers:
+                txt = self._font_head.render(text, True, ACCENT)
+                surf.blit(txt, (table_x + offset, head_y))
 
         pygame.draw.line(surf, (50, 50, 80),
                          (table_x, head_y + 22),
                          (table_x + table_w, head_y + 22), 1)
 
         if not self._scores:
-            no_scores = self._font_row.render(
-                "No scores yet. Play to set a record!", True, DIM)
-            surf.blit(no_scores, (W // 2 - no_scores.get_width() // 2,
-                                   head_y + 40))
+            if self._font_row:
+                no_scores = self._font_row.render(
+                    "No scores yet. Play to set a record!", True, DIM)
+                surf.blit(no_scores, (W // 2 - no_scores.get_width() // 2,
+                                       head_y + 40))
         else:
             for i, entry in enumerate(self._scores[:10]):
                 ry = head_y + 32 + i * 36
@@ -106,30 +110,31 @@ class HighScoresState(BaseState):
                 rank_cols = [(255, 215, 0), (192, 192, 192), (205, 127, 50)]
                 rcol = rank_cols[i] if i < 3 else DIM
 
-                rank_txt = self._font_row.render(f"#{i+1}", True, rcol)
-                rank_txt.set_alpha(alpha)
-                surf.blit(rank_txt, (table_x, ry))
+                if self._font_row:
+                    rank_txt = self._font_row.render(f"#{i+1}", True, rcol)
+                    rank_txt.set_alpha(alpha)
+                    surf.blit(rank_txt, (table_x, ry))
 
-                name_txt = self._font_row.render(
-                    entry.get("name", "???")[:16], True, WHITE)
-                name_txt.set_alpha(alpha)
-                surf.blit(name_txt, (table_x + 60, ry))
+                    name_txt = self._font_row.render(
+                        entry.get("name", "???")[:16], True, WHITE)
+                    name_txt.set_alpha(alpha)
+                    surf.blit(name_txt, (table_x + 60, ry))
 
-                score_txt = self._font_row.render(
-                    f"{entry.get('score', 0):>7}", True, WHITE)
-                score_txt.set_alpha(alpha)
-                surf.blit(score_txt, (table_x + 240, ry))
+                    score_txt = self._font_row.render(
+                        f"{entry.get('score', 0):>7}", True, WHITE)
+                    score_txt.set_alpha(alpha)
+                    surf.blit(score_txt, (table_x + 240, ry))
 
-                wave_txt = self._font_row.render(
-                    str(entry.get("wave", 0)), True, DIM)
-                wave_txt.set_alpha(alpha)
-                surf.blit(wave_txt, (table_x + 360, ry))
+                    wave_txt = self._font_row.render(
+                        str(entry.get("wave", 0)), True, DIM)
+                    wave_txt.set_alpha(alpha)
+                    surf.blit(wave_txt, (table_x + 360, ry))
 
-                t = entry.get("time", 0)
-                time_txt = self._font_row.render(
-                    f"{t // 60:02d}:{t % 60:02d}", True, DIM)
-                time_txt.set_alpha(alpha)
-                surf.blit(time_txt, (table_x + 440, ry))
+                    t = entry.get("time", 0)
+                    time_txt = self._font_row.render(
+                        f"{t // 60:02d}:{t % 60:02d}", True, DIM)
+                    time_txt.set_alpha(alpha)
+                    surf.blit(time_txt, (table_x + 440, ry))
 
                 # Subtle row separator
                 if i < len(self._scores) - 1:
@@ -139,15 +144,17 @@ class HighScoresState(BaseState):
                     surf.blit(s, (table_x, sep_y))
 
         # Back button
-        bx, by, bw, bh = W // 2 - 60, H - 70, 120, 32
-        mouse_lpos = self.manager.mouse_to_logical()
-        hover = pygame.Rect(bx, by, bw, bh).collidepoint(mouse_lpos)
-        bcol = (210, 45, 75) if hover else (50, 50, 80)
-        draw_panel(surf, (bx, by, bw, bh), bg_color=(12, 8, 18),
-                   border_color=bcol, alpha=220, radius=5)
-        btxt = self._font_head.render("BACK", True, WHITE if hover else DIM)
-        surf.blit(btxt, (bx + bw // 2 - btxt.get_width() // 2,
-                         by + bh // 2 - btxt.get_height() // 2))
+        if self._font_head:
+            bx, by, bw, bh = W // 2 - 60, H - 70, 120, 32
+            mouse_lpos = self.manager.mouse_to_logical()
+            hover = pygame.Rect(bx, by, bw, bh).collidepoint(mouse_lpos)
+            bcol = (210, 45, 75) if hover else (50, 50, 80)
+            draw_panel(surf, (bx, by, bw, bh), bg_color=(12, 8, 18),
+                       border_color=bcol, alpha=220, radius=5)
+            btxt = self._font_head.render("BACK", True, WHITE if hover else DIM)
+            surf.blit(btxt, (bx + bw // 2 - btxt.get_width() // 2,
+                             by + bh // 2 - btxt.get_height() // 2))
 
-        hint = self._font_small.render("ESC / ENTER to go back", True, (50, 50, 70))
-        surf.blit(hint, (W // 2 - hint.get_width() // 2, H - 25))
+        if self._font_small:
+            hint = self._font_small.render("ESC / ENTER to go back", True, (50, 50, 70))
+            surf.blit(hint, (W // 2 - hint.get_width() // 2, H - 25))
