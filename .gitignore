@@ -29,3 +29,9 @@ ENV/
 #local test
 highscores.json"main.dist/" 
 "main.build/" 
+
+# distribution
+
+main.dist/
+main.build/
+"*.exe" 
