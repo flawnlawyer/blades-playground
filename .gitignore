@@ -27,4 +27,5 @@ ENV/
 *.log
 
 #local test
-highscores.json
+highscores.json"main.dist/" 
+"main.build/" 
