@@ -35,3 +35,6 @@ highscores.json"main.dist/"
 main.dist/
 main.build/
 "*.exe" 
+main.exe
+
+
