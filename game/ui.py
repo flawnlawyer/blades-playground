@@ -83,11 +83,13 @@ class UI:
         surf.blit(self.font_s.render(txt, True, col), (20, H - 58))
 
         # Dash indicator
-        if player._dash_cd > 0:
-            dtxt = f"[SHIFT] dash: {player._dash_cd:.1f}s"
+        pips = "".join("[#]" if i < player.dash_charges else "[ ]"
+                       for i in range(2))
+        if player.dash_charges <= 0:
+            dtxt = f"[SHIFT] dash: {pips}  {max(0.0, player._dash_recharge):.1f}s"
             dcol = (80, 80, 160)
         else:
-            dtxt = "[SHIFT] dash: READY"
+            dtxt = f"[SHIFT] dash: {pips}"
             dcol = (120, 120, 255)
         surf.blit(self.font_s.render(dtxt, True, dcol), (20, H - 70))
 
@@ -168,7 +170,7 @@ class UI:
             pygame.draw.rect(surf, (*WHITE, 30), (bx, by, fill, bh // 2), border_radius=6)
         pygame.draw.rect(surf, (80, 80, 130), (bx, by, bw, bh), 1, border_radius=6)
         # Phase 2 warning line
-        p2x = bx + int(bw * (7 / BOSS_HP))
+        p2x = bx + int(bw * (boss._p2_hp / boss.max_hp))
         pygame.draw.line(surf, (255, 60, 60), (p2x, by), (p2x, by + bh), 2)
 
     # ── Fragment popup ────────────────────────────────────────────────────────

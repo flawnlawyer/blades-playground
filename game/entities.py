@@ -4,6 +4,7 @@ Enemies: Standard, Hunter, Swarm, Phantom, Boss (The Architect)
 """
 from __future__ import annotations
 import math, random
+from functools import lru_cache
 import pygame
 
 from game.constants import (
@@ -20,13 +21,15 @@ from game.constants import (
     BOMB_FUSE,
     PLASMA_COL, SPREAD_COL, CHAIN_COL, BEAM_COL, BOMB_COL,
 )
-from utils.helpers import glow_circle, glow_circle_multi, rotate_points
+from utils.helpers import glow_circle, glow_circle_multi, rotate_points, _q, _qa
 
 
 # ── Meh Block ─────────────────────────────────────────────────────────────────
 
 class MehBlock:
     SIZE = 38
+    _stripe: "pygame.Surface | None" = None      # shared, built once
+    _labels: dict = {}                            # (font id, hacked) -> Surface
 
     def __init__(self, x: float, y: float) -> None:
         self.rect       = pygame.Rect(int(x), int(y), self.SIZE, self.SIZE)
@@ -60,11 +63,16 @@ class MehBlock:
         col = MEH_HACKED if self.hacked else MEH_COL
         r   = self.rect.move(self._glitch)
         pygame.draw.rect(surf, col, r, border_radius=5)
-        stripe = pygame.Surface((r.width, 3), pygame.SRCALPHA)
-        stripe.fill((*WHITE, 16))
-        surf.blit(stripe, (r.x, self._stripe_y))
+        if MehBlock._stripe is None:
+            MehBlock._stripe = pygame.Surface((self.SIZE, 3), pygame.SRCALPHA)
+            MehBlock._stripe.fill((*WHITE, 16))
+        surf.blit(MehBlock._stripe, (r.x, self._stripe_y))
         pygame.draw.rect(surf, (*WHITE, 28), r, 1, border_radius=5)
-        label = font.render(">>" if self.hacked else "meh", True, (20, 20, 35))
+        key = (id(font), self.hacked)
+        label = MehBlock._labels.get(key)
+        if label is None:
+            label = font.render(">>" if self.hacked else "meh", True, (20, 20, 35))
+            MehBlock._labels[key] = label
         surf.blit(label, (r.x + 7, r.y + 13))
 
 
@@ -136,7 +144,7 @@ class Projectile:
                 self.detonated = True
                 self.alive     = False
         else:
-            self.pos += self.vel
+            self.pos += self.vel * (dt * 60.0)
             if self.origin.distance_to(self.pos) > self.max_range:
                 self.alive = False
 
@@ -175,8 +183,9 @@ class _BaseEnemy:
         self._phase     = random.uniform(0, math.tau)
         self._glitch    = [0, 0]
         self.score_val  = 35
+        self._k         = 1.0   # dt*60, refreshed every update
 
-    def take_damage(self, dmg: int) -> bool:
+    def take_damage(self, dmg: float) -> bool:
         self.hp -= dmg
         return self.hp <= 0
 
@@ -185,6 +194,7 @@ class _BaseEnemy:
         self.stun_timer = 2.5
 
     def _tick_stun(self, dt: float) -> bool:
+        self._k = dt * 60.0
         self._phase += dt * 4
         if random.random() < 0.04:
             self._glitch = [random.randint(-3, 3), random.randint(-3, 3)]
@@ -232,15 +242,15 @@ class Enemy(_BaseEnemy):
         if self._tick_stun(dt):
             return
         dist = (player_pos - self.pos).length()
-        if dist < ENEMY_CHASE_DIST:
-            self.pos += (player_pos - self.pos).normalize() * self.speed * 1.6
+        if 0.001 < dist < ENEMY_CHASE_DIST:
+            self.pos += (player_pos - self.pos).normalize() * self.speed * 1.6 * self._k
         else:
             self._wander_cd -= dt
             if self._wander_cd <= 0:
                 self._wander_cd = random.uniform(1.0, 2.5)
                 self._wander = pygame.Vector2(
                     random.uniform(-1, 1), random.uniform(-1, 1)).normalize()
-            self.pos += self._wander * self.speed
+            self.pos += self._wander * self.speed * self._k
         self.pos.x = max(self.radius, min(W - self.radius, self.pos.x))
         self.pos.y = max(self.radius, min(H - self.radius, self.pos.y))
 
@@ -275,7 +285,7 @@ class Hunter(_BaseEnemy):
         direction = player_pos - self.pos
         if direction.length() > 0:
             self._face_angle = math.atan2(direction.y, direction.x)
-            self.pos += direction.normalize() * self.speed * 1.8
+            self.pos += direction.normalize() * self.speed * 1.8 * self._k
         self.pos.x = max(self.radius, min(W - self.radius, self.pos.x))
         self.pos.y = max(self.radius, min(H - self.radius, self.pos.y))
 
@@ -315,15 +325,15 @@ class SwarmNode(_BaseEnemy):
         if self._tick_stun(dt):
             return
         dist = (player_pos - self.pos).length()
-        if dist < 300:
-            self.pos += (player_pos - self.pos).normalize() * self.speed * 1.9
+        if 0.001 < dist < 300:
+            self.pos += (player_pos - self.pos).normalize() * self.speed * 1.9 * self._k
         else:
             self._wander_cd -= dt
             if self._wander_cd <= 0:
                 self._wander_cd = random.uniform(0.5, 1.5)
                 self._wander = pygame.Vector2(
                     random.uniform(-1, 1), random.uniform(-1, 1)).normalize()
-            self.pos += self._wander * self.speed
+            self.pos += self._wander * self.speed * self._k
         self.pos.x = max(self.radius, min(W - self.radius, self.pos.x))
         self.pos.y = max(self.radius, min(H - self.radius, self.pos.y))
 
@@ -344,6 +354,16 @@ class SwarmNode(_BaseEnemy):
 
 # ── Phantom Enemy ─────────────────────────────────────────────────────────────
 
+@lru_cache(maxsize=64)
+def _phantom_sprite(r: int, alpha: int) -> pygame.Surface:
+    s = pygame.Surface((r * 2 + 20, r * 2 + 20), pygame.SRCALPHA)
+    pts = [(r + 10 + int(r * math.cos(math.tau * i / 8)),
+            r + 10 + int(r * math.sin(math.tau * i / 8))) for i in range(8)]
+    pygame.draw.polygon(s, (*PHANTOM_COL, alpha), pts)
+    pygame.draw.polygon(s, (*WHITE, 100), pts, 1)
+    return s
+
+
 class Phantom(_BaseEnemy):
     """Translucent. Passes through MehBlocks. Medium speed."""
     def __init__(self, x: float, y: float) -> None:
@@ -359,40 +379,38 @@ class Phantom(_BaseEnemy):
         if self._tick_stun(dt):
             return
         dist = (player_pos - self.pos).length()
-        if dist < 280:
-            self.pos += (player_pos - self.pos).normalize() * self.speed * 1.5
+        if 0.001 < dist < 280:
+            self.pos += (player_pos - self.pos).normalize() * self.speed * 1.5 * self._k
         else:
             self._wander_cd -= dt
             if self._wander_cd <= 0:
                 self._wander_cd = random.uniform(1.2, 2.8)
                 self._wander = pygame.Vector2(
                     random.uniform(-1, 1), random.uniform(-1, 1)).normalize()
-            self.pos += self._wander * self.speed
+            self.pos += self._wander * self.speed * self._k
         self.pos.x = max(self.radius, min(W - self.radius, self.pos.x))
         self.pos.y = max(self.radius, min(H - self.radius, self.pos.y))
 
     def draw(self, surf: pygame.Surface) -> None:
-        pulse_a = int(120 + 50 * abs(math.sin(self._phase * 0.7)))
-        col     = (*PHANTOM_COL, pulse_a)
+        pulse_a = _qa(120 + 50 * abs(math.sin(self._phase * 0.7)))
         cx  = int(self.pos[0]) + self._glitch[0]
         cy  = int(self.pos[1]) + self._glitch[1]
         r   = self.radius
-        s   = pygame.Surface((r * 2 + 20, r * 2 + 20), pygame.SRCALPHA)
-        # Octagon
-        pts_local = [
-            (r + 10 + int(r * math.cos(math.tau * i / 8)),
-             r + 10 + int(r * math.sin(math.tau * i / 8)))
-            for i in range(8)
-        ]
-        pygame.draw.polygon(s, col, pts_local)
-        pygame.draw.polygon(s, (*WHITE, 100), pts_local, 1)
-        surf.blit(s, (cx - r - 10, cy - r - 10))
+        surf.blit(_phantom_sprite(r, pulse_a), (cx - r - 10, cy - r - 10))
         if not self.stunned:
             glow_circle(surf, PHANTOM_COL, (cx, cy), r + 10, 20)
         self._draw_hp_bar(surf, cx, cy, r)
 
 
 # ── Boss — The Architect ───────────────────────────────────────────────────────
+
+@lru_cache(maxsize=8)
+def _phase2_overlay(r: int) -> pygame.Surface:
+    s = pygame.Surface((r * 2 + 1, r * 2 + 1), pygame.SRCALPHA)
+    pts = [(r, 0), (r * 2, r), (r, r * 2), (0, r)]
+    pygame.draw.polygon(s, (255, 60, 60, 40), pts)
+    return s
+
 
 class Boss(_BaseEnemy):
     """
@@ -402,8 +420,9 @@ class Boss(_BaseEnemy):
     SPAWN_CD_P1 = 8.0
     SPAWN_CD_P2 = 5.0
 
-    def __init__(self, x: float, y: float) -> None:
-        super().__init__(x, y, hp=BOSS_HP)
+    def __init__(self, x: float, y: float, hp: float = BOSS_HP) -> None:
+        super().__init__(x, y, hp=hp)
+        self._p2_hp     = max(1, int(hp) // 2)   # 15 -> 7, matching the old constant
         self.radius     = BOSS_RADIUS
         self.score_val  = 500
         self.phase      = 1
@@ -413,7 +432,7 @@ class Boss(_BaseEnemy):
 
     @property
     def is_phase2(self) -> bool:
-        return self.hp <= BOSS_PHASE2_HP
+        return self.hp <= self._p2_hp
 
     def update(self, dt: float, player_pos: pygame.Vector2) -> None:
         self._tick_stun(dt)
@@ -434,7 +453,7 @@ class Boss(_BaseEnemy):
         direction = target - self.pos
         speed = 2.0 if self.is_phase2 else 1.4
         if direction.length() > 2:
-            self.pos += direction.normalize() * speed
+            self.pos += direction.normalize() * speed * self._k
 
         self.pos.x = max(self.radius + 20, min(W - self.radius - 20, self.pos.x))
         self.pos.y = max(self.radius + 20, min(H - self.radius - 20, self.pos.y))
@@ -465,9 +484,7 @@ class Boss(_BaseEnemy):
              cy + int((r + 18) * math.sin(self._ring_angle + math.tau * i / 8)))
             for i in range(8)
         ]
-        s = pygame.Surface((W, H), pygame.SRCALPHA)
-        pygame.draw.polygon(s, (*col, 60), ring_pts, 2)
-        surf.blit(s, (0, 0))
+        pygame.draw.polygon(surf, (*col, 60), ring_pts, 2)
 
         # Multi-layer glow
         glow_circle_multi(surf, col, (cx, cy), r, 3)
@@ -484,6 +501,4 @@ class Boss(_BaseEnemy):
 
         # Phase 2 indicator
         if self.is_phase2:
-            s2 = pygame.Surface((W, H), pygame.SRCALPHA)
-            pygame.draw.polygon(s2, (255, 60, 60, 40), pts)
-            surf.blit(s2, (0, 0))
+            surf.blit(_phase2_overlay(r), (cx - r, cy - r))

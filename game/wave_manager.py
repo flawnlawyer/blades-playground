@@ -87,12 +87,16 @@ class WaveManager:
         else:
             # Procedural scaling beyond wave 5
             n     = self.wave - len(WAVE_DEFS)
-            defs  = [
-                ("standard", 3 + n),
-                ("hunter",   1 + n // 2),
-                ("phantom",  n // 2),
-                ("swarm",    n),
-            ]
+            if self.is_boss_wave:
+                tier = (self.wave - 5) // 5
+                defs = [("boss", 1), ("hunter", 1 + tier), ("swarm", 2 * tier)]
+            else:
+                defs  = [
+                    ("standard", 3 + n),
+                    ("hunter",   1 + n // 2),
+                    ("phantom",  n // 2),
+                    ("swarm",    n),
+                ]
         for (etype, count) in defs:
             for _ in range(count):
                 spawns.append((etype,))

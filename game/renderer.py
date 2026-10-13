@@ -1,32 +1,63 @@
 """
 renderer.py — Background, post-process, and visual FX layer.
-New: vignette, CRT scanlines, parallax debris, shockwave flash.
+
+Performance notes
+  * The background (BG colour + grid) is baked once into an opaque surface.
+  * Vignette and CRT scanlines are baked into ONE overlay (one blit, not two).
+  * Chromatic wash, chaos tint and hit-flash are cached plain surfaces drawn
+    with set_alpha (constant-alpha blits are ~2x cheaper than per-pixel alpha).
+  * Parallax debris uses cached circle sprites.
 """
 from __future__ import annotations
-import random, math
+import random
 import pygame
 
 from game.constants import (
     W, H, TILE,
-    BG, GRID_DIM, GRID_BRIGHT, WHITE, CHAOS_COL,
+    BG, GRID_DIM, GRID_BRIGHT, CHAOS_COL,
 )
-from utils.helpers import alpha_rect
+from utils.helpers import fade_circle
+
+
+def _plain(color: tuple) -> pygame.Surface:
+    """Opaque full-screen surface (display format when available)."""
+    s = pygame.Surface((W, H))
+    if pygame.display.get_surface() is not None:
+        s = s.convert()
+    s.fill(color)
+    return s
 
 
 class Renderer:
     def __init__(self) -> None:
         self._glitch_lines: list[tuple] = []
         self._glitch_cd   = random.uniform(1.0, 3.0)
-        self._vignette    = self._make_vignette()
-        self._scanlines   = self._make_scanlines()
+        self._bg          = self._make_background()
+        self._overlay     = self._make_overlay()
         self._debris      = [_DebrisParticle() for _ in range(22)]
         self._flash_timer = 0.0
         self._flash_color = (255, 0, 0)
+        # Reusable full-screen tint surfaces (alpha set per draw)
+        self._flash_surf  = _plain((255, 0, 0))
+        self._chroma_surf = _plain((150, 0, 255))
+        self._chaos_surf  = _plain(CHAOS_COL)
 
     # ── Pre-baked surfaces ────────────────────────────────────────────────────
 
     @staticmethod
-    def _make_vignette() -> pygame.Surface:
+    def _make_background() -> pygame.Surface:
+        s = _plain(BG)
+        for x in range(0, W, TILE):
+            col = GRID_BRIGHT if x % (TILE * 4) == 0 else GRID_DIM
+            pygame.draw.line(s, col, (x, 0), (x, H))
+        for y in range(0, H, TILE):
+            col = GRID_BRIGHT if y % (TILE * 4) == 0 else GRID_DIM
+            pygame.draw.line(s, col, (0, y), (W, y))
+        return s
+
+    @staticmethod
+    def _make_overlay() -> pygame.Surface:
+        """Vignette + CRT scanlines composited into a single surface."""
         s = pygame.Surface((W, H), pygame.SRCALPHA)
         cx, cy = W // 2, H // 2
         for r in range(max(W, H), 0, -4):
@@ -37,19 +68,20 @@ class Renderer:
             pygame.draw.ellipse(s, (0, 0, 0, a),
                                 (cx - r, cy - int(r * 0.6),
                                  r * 2, int(r * 1.2)), 3)
-        return s
-
-    @staticmethod
-    def _make_scanlines() -> pygame.Surface:
-        s = pygame.Surface((W, H), pygame.SRCALPHA)
+        scan = pygame.Surface((W, H), pygame.SRCALPHA)
         for y in range(0, H, 3):
-            pygame.draw.line(s, (0, 0, 0, 14), (0, y), (W, y))
-        return s
+            pygame.draw.line(scan, (0, 0, 0, 14), (0, y), (W, y))
+        s.blit(scan, (0, 0))
+        # Black-at-alpha-a == multiply by (255-a)/255.  Flatten onto white to get
+        # an opaque multiply-map; BLEND_RGB_MULT blits ~3.5x faster than per-pixel alpha.
+        mul = pygame.Surface((W, H))
+        mul.fill((255, 255, 255))
+        mul.blit(s, (0, 0))
+        return mul.convert() if pygame.display.get_surface() is not None else mul
 
     # ── Per-frame update ──────────────────────────────────────────────────────
 
     def update(self, dt: float, chaos_mode: bool) -> None:
-        # Glitch lines
         self._glitch_cd -= dt
         if self._glitch_cd <= 0:
             self._glitch_cd = random.uniform(
@@ -66,63 +98,49 @@ class Renderer:
         elif random.random() < (0.18 if chaos_mode else 0.08):
             self._glitch_lines = []
 
-        # Parallax debris
         for d in self._debris:
             d.update(dt)
 
-        # Flash decay
         if self._flash_timer > 0:
             self._flash_timer -= dt
 
     # ── Draw calls ────────────────────────────────────────────────────────────
 
     def draw_background(self, surf: pygame.Surface, chaos_mode: bool) -> None:
-        surf.fill(BG)
-
-        # Parallax debris (background layer)
+        surf.blit(self._bg, (0, 0))
         for d in self._debris:
             d.draw(surf)
-
-        # Grid
-        for x in range(0, W, TILE):
-            col = GRID_BRIGHT if x % (TILE * 4) == 0 else GRID_DIM
-            pygame.draw.line(surf, col, (x, 0), (x, H))
-        for y in range(0, H, TILE):
-            col = GRID_BRIGHT if y % (TILE * 4) == 0 else GRID_DIM
-            pygame.draw.line(surf, col, (0, y), (W, y))
-
-        # Chaos world pulse blobs
+        # Chaos: flickering amber world pulse (one blit instead of six)
         if chaos_mode:
-            for _ in range(6):
-                cx = random.randint(0, W)
-                cy = random.randint(0, H)
-                alpha_rect(surf, (255, 160, 0), (cx - 180, cy - 180, 360, 360), 4)
+            self._chaos_surf.set_alpha(random.randint(5, 13))
+            surf.blit(self._chaos_surf, (0, 0))
 
     def draw_glitch_lines(self, surf: pygame.Surface) -> None:
         for (y, width, col) in self._glitch_lines:
             pygame.draw.rect(surf, col, (0, y, width, 2))
 
     def draw_chromatic(self, surf: pygame.Surface) -> None:
-        r_s = pygame.Surface((W, H), pygame.SRCALPHA)
-        r_s.fill((255, 0, 0, 12))
-        surf.blit(r_s, (5, 0))
-        b_s = pygame.Surface((W, H), pygame.SRCALPHA)
-        b_s.fill((0, 0, 255, 12))
-        surf.blit(b_s, (-5, 0))
+        self._chroma_surf.set_alpha(20)
+        surf.blit(self._chroma_surf, (0, 0))
 
+    def draw_overlay(self, surf: pygame.Surface) -> None:
+        """Vignette + scanlines in a single multiply-blend blit."""
+        surf.blit(self._overlay, (0, 0), special_flags=pygame.BLEND_RGB_MULT)
+
+    # Kept for API compatibility
     def draw_vignette(self, surf: pygame.Surface) -> None:
-        surf.blit(self._vignette, (0, 0))
+        self.draw_overlay(surf)
 
     def draw_scanlines(self, surf: pygame.Surface) -> None:
-        surf.blit(self._scanlines, (0, 0))
+        pass
 
     def draw_flash(self, surf: pygame.Surface) -> None:
         if self._flash_timer <= 0:
             return
         a = int(180 * min(1.0, self._flash_timer / 0.12))
-        ov = pygame.Surface((W, H), pygame.SRCALPHA)
-        ov.fill((*self._flash_color, a))
-        surf.blit(ov, (0, 0))
+        self._flash_surf.fill(self._flash_color)
+        self._flash_surf.set_alpha(a)
+        surf.blit(self._flash_surf, (0, 0))
 
     def trigger_flash(self, color: tuple = (255, 0, 0), dur: float = 0.12) -> None:
         self._flash_timer = dur
@@ -149,6 +167,4 @@ class _DebrisParticle:
             self._reset()
 
     def draw(self, surf: pygame.Surface) -> None:
-        s = pygame.Surface((self.r * 2, self.r * 2), pygame.SRCALPHA)
-        pygame.draw.circle(s, (*self.col, self.alpha), (self.r, self.r), self.r)
-        surf.blit(s, (int(self.x) - self.r, int(self.y) - self.r))
+        fade_circle(surf, self.col, (self.x, self.y), self.r, self.alpha)

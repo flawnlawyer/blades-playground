@@ -13,7 +13,7 @@ from game.constants import (
     ENEMY_SCORE_REWARD, BOSS_SCORE_REWARD,
     MEH_SPAWN_MIN, MEH_SPAWN_BATCH, FRAG_SPAWN_MIN, FRAG_SPAWN_BATCH,
     BOMB_RADIUS, BOMB_DAMAGE,
-    CHAIN_DAMAGE,
+    CHAIN_DAMAGE, BEAM_DAMAGE_PS, BOSS_HP,
     FRAGMENTS,
     WEAPON_COLORS,
 )
@@ -47,6 +47,10 @@ class Game:
 
         # Flag so PlayState pushes GameOverState only once
         self._gameover_handled = False
+
+        # Reused every frame instead of allocating a 1280x720 surface per draw
+        self._world = pygame.Surface((W, H), pygame.SRCALPHA)
+        self._beam_sfx_cd = 0.0
 
         # Track dt for wave banner (since we don't tick our own clock)
         self._last_dt = 0.016
@@ -94,7 +98,8 @@ class Game:
         elif etype == "phantom":
             self.enemies.append(Phantom(x, y))
         elif etype == "boss":
-            self.boss = Boss(W // 2, 80)
+            tier = max(0, (self.wave_mgr.wave - 5) // 5)
+            self.boss = Boss(W // 2, 80, hp=BOSS_HP + 8 * tier)
             self.audio.boss_spawn()
 
     # ── State ─────────────────────────────────────────────────────────────────
@@ -232,23 +237,10 @@ class Game:
             self.audio.chain_zap()
             p.chain_targets.clear()
 
+        if self._beam_sfx_cd > 0:
+            self._beam_sfx_cd -= dt
         if p.beam_active:
-            self.audio.beam_hum()
-            if self.boss:
-                from game.constants import BEAM_DAMAGE_PS
-                offset = self.boss.pos - p.pos
-                dist   = offset.length()
-                if dist < 500:
-                    e_angle  = math.atan2(offset.y, offset.x)
-                    diff     = abs(math.atan2(
-                        math.sin(e_angle - p._angle),
-                        math.cos(e_angle - p._angle)))
-                    if diff < 0.18:
-                        # take_damage expects an int; convert floating DPS*dt to int
-                        if self.boss.take_damage(int(BEAM_DAMAGE_PS * dt)):
-                            self._on_boss_killed()
-                        else:
-                            self.audio.boss_hit()
+            self._apply_beam(dt)
 
         self.projectiles = [proj for i, proj in enumerate(self.projectiles)
                             if i not in dead_projs]
@@ -270,7 +262,7 @@ class Game:
             pt.update(dt)
 
         if self.frag_timer > 0: self.frag_timer -= dt
-        if self.shake      > 0: self.shake      -= 1
+        if self.shake      > 0: self.shake      = max(0.0, self.shake - 60.0 * dt)
 
         self.renderer.update(dt, p.chaos_mode)
         self._handle_collisions()
@@ -286,6 +278,33 @@ class Game:
                 self.audio.boss_spawn()
             else:
                 self.audio.wave_start()
+
+    def _beam_hits(self, ent, cx: float, cy: float) -> bool:
+        """Perpendicular-distance test against the beam ray (500px long)."""
+        ex = ent.pos.x - self.player.pos.x
+        ey = ent.pos.y - self.player.pos.y
+        along = ex * cx + ey * cy
+        if along < 0 or along > 500:
+            return False
+        return abs(ex * cy - ey * cx) < ent.radius + 6
+
+    def _apply_beam(self, dt: float) -> None:
+        p   = self.player
+        cx, cy = math.cos(p._angle), math.sin(p._angle)
+        dmg = BEAM_DAMAGE_PS * dt          # float damage — no int truncation to 0
+        sfx = self._beam_sfx_cd <= 0
+        if sfx:                            # throttled: was fired every frame
+            self.audio.beam_hum()
+            self._beam_sfx_cd = 0.12
+        for e in self.enemies[:]:
+            if self._beam_hits(e, cx, cy):
+                if e.take_damage(dmg):
+                    self._on_enemy_killed(e)   # scores, bursts, REMOVES the enemy
+        if self.boss and self._beam_hits(self.boss, cx, cy):
+            if self.boss.take_damage(dmg):
+                self._on_boss_killed()
+            elif sfx:
+                self.audio.boss_hit()
 
     def _handle_bomb_explosion(self, proj: Projectile) -> None:
         cx, cy = int(proj.pos.x), int(proj.pos.y)
@@ -374,7 +393,7 @@ class Game:
                     self._burst(int(e.pos.x), int(e.pos.y), ENEMY_COL, 22, (2, 7))
                     self._on_enemy_killed(e)
                     self.audio.meh_destroy()
-                elif p.inv_timer <= 0:
+                elif not p.invulnerable:
                     self.hp        -= 1
                     p.inv_timer     = PLAYER_INV_DURATION
                     self.shake      = 12
@@ -396,7 +415,7 @@ class Game:
             if push_vec.length_squared() < (self.boss.radius + p.radius) ** 2:
                 if p.chaos_mode:
                     self._on_boss_killed()
-                elif p.inv_timer <= 0:
+                elif not p.invulnerable:
                     self.hp        -= 1
                     p.inv_timer     = PLAYER_INV_DURATION
                     self.shake      = 16
@@ -426,14 +445,16 @@ class Game:
             surf = pygame.display.get_surface()
 
         ox, oy = 0, 0
-        if self.shake:
-            ox = random.randint(-self.shake, self.shake)
-            oy = random.randint(-self.shake, self.shake)
+        sh = int(self.shake)
+        if sh:
+            ox = random.randint(-sh, sh)
+            oy = random.randint(-sh, sh)
 
         self.renderer.draw_background(surf, self.player.chaos_mode)
         self.renderer.draw_glitch_lines(surf)
 
-        world = pygame.Surface((W, H), pygame.SRCALPHA)
+        world = self._world
+        world.fill((0, 0, 0, 0))
         for b    in self.meh_blocks:  b.draw(world, self.ui.font_s)
         for f    in self.fragments:   f.draw(world)
         for e    in self.enemies:     e.draw(world)
@@ -447,8 +468,7 @@ class Game:
         if self.player.chaos_mode:
             self.renderer.draw_chromatic(surf)
 
-        self.renderer.draw_vignette(surf)
-        self.renderer.draw_scanlines(surf)
+        self.renderer.draw_overlay(surf)
         self.renderer.draw_flash(surf)
 
         self.ui.draw_hud(surf, self.player, self.hp,

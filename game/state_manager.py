@@ -130,6 +130,9 @@ class StateManager:
     def scale_and_blit(self) -> None:
         """Scale the logical surface to the real screen with letterboxing."""
         self.screen.fill((0, 0, 0))
+        if self._scaled_size == (LOGICAL_W, LOGICAL_H):
+            self.screen.blit(self.logical_surface, (self._offset_x, self._offset_y))
+            return
         scaled = pygame.transform.smoothscale(
             self.logical_surface, self._scaled_size)
         self.screen.blit(scaled, (self._offset_x, self._offset_y))

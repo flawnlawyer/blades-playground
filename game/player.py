@@ -11,7 +11,8 @@ from game.constants import (
     PLAYER_SPEED, PLAYER_RADIUS, PLAYER_TRAIL_LEN,
     PLAYER_HACK_CD, PLAYER_INV_DURATION,
     PLAYER_MAX_ENERGY, CHAOS_DURATION, CHAOS_SPEED_MULT,
-    PLAYER_DASH_SPEED, PLAYER_DASH_FRAMES, PLAYER_DASH_CD,
+    PLAYER_DASH_SPEED, PLAYER_DASH_FRAMES,
+    PLAYER_DASH_CHARGES, PLAYER_DASH_CHARGE_CD,
     WEAPON_NAMES, WEAPON_COLORS,
     PLASMA_CD, PLASMA_SPEED, PLASMA_DAMAGE, PLASMA_RANGE,
     SPREAD_CD, SPREAD_SPEED, SPREAD_DAMAGE, SPREAD_COUNT, SPREAD_ANGLE,
@@ -20,7 +21,8 @@ from game.constants import (
     BOMB_MAX, BOMB_RECHARGE, BOMB_RADIUS, BOMB_DAMAGE, BOMB_FUSE,
 )
 from game.entities import Projectile
-from utils.helpers import glow_circle, glow_circle_multi, rotate_points, lerp_color
+from utils.helpers import (glow_circle, glow_circle_multi, rotate_points,
+                           lerp_color, fade_circle)
 
 
 class Player:
@@ -36,8 +38,9 @@ class Player:
         self.trail: list[pygame.Vector2] = []
 
         # Dash
-        self._dash_cd          = 0.0
-        self._dash_frames_left = 0
+        self.dash_charges      = PLAYER_DASH_CHARGES   # 2 charges, recharge one at a time
+        self._dash_recharge    = 0.0
+        self._dash_time_left   = 0.0
         self._dash_vel         = pygame.Vector2(0, 0)
         self.is_dashing        = False
 
@@ -87,13 +90,14 @@ class Player:
             vel = vel.normalize() * spd
 
         # Dash
-        if self._dash_frames_left > 0:
-            self.pos += self._dash_vel
-            self._dash_frames_left -= 1
-            if self._dash_frames_left == 0:
+        k = dt * 60.0
+        if self._dash_time_left > 0:
+            self.pos += self._dash_vel * k
+            self._dash_time_left -= dt
+            if self._dash_time_left <= 0:
                 self.is_dashing = False
         else:
-            self.pos += vel
+            self.pos += vel * k
 
         self.pos.x = max(self.radius, min(W - self.radius, self.pos.x))
         self.pos.y = max(self.radius, min(H - self.radius, self.pos.y))
@@ -106,7 +110,12 @@ class Player:
         # Timers
         if self.hack_cd   > 0: self.hack_cd   -= dt
         if self.inv_timer > 0: self.inv_timer -= dt
-        if self._dash_cd  > 0: self._dash_cd  -= dt
+        if self.dash_charges < PLAYER_DASH_CHARGES:
+            self._dash_recharge -= dt
+            if self._dash_recharge <= 0:
+                self.dash_charges += 1
+                self._dash_recharge = (PLAYER_DASH_CHARGE_CD
+                                       if self.dash_charges < PLAYER_DASH_CHARGES else 0.0)
         for i in range(5):
             if self._weapon_cds[i] > 0:
                 self._weapon_cds[i] -= dt
@@ -142,7 +151,7 @@ class Player:
     # ── Dash ──────────────────────────────────────────────────────────────────
 
     def trigger_dash(self, keys) -> bool:
-        if self._dash_cd > 0 or self.is_dashing:
+        if self.dash_charges <= 0 or self.is_dashing:
             return False
         vel = pygame.Vector2(0, 0)
         if keys[pygame.K_w] or keys[pygame.K_UP]:    vel.y -= 1
@@ -152,10 +161,17 @@ class Player:
         if vel.length_squared() == 0:
             vel = pygame.Vector2(math.cos(self._angle), math.sin(self._angle))
         self._dash_vel         = vel.normalize() * PLAYER_DASH_SPEED
-        self._dash_frames_left = PLAYER_DASH_FRAMES
-        self._dash_cd          = PLAYER_DASH_CD
+        self._dash_time_left   = PLAYER_DASH_FRAMES / 60.0
+        self.dash_charges     -= 1
+        if self._dash_recharge <= 0:
+            self._dash_recharge = PLAYER_DASH_CHARGE_CD
         self.is_dashing        = True
         return True
+
+    @property
+    def invulnerable(self) -> bool:
+        """True during hit-recovery i-frames AND while dashing."""
+        return self.inv_timer > 0 or self.is_dashing
 
     # ── Weapon fire ───────────────────────────────────────────────────────────
 
@@ -225,21 +241,10 @@ class Player:
         self.chain_targets = targets
 
     def _fire_beam(self, dx: float, dy: float, enemies: list, dt: float) -> None:
-        """Null Beam — continuous, drains energy."""
+        """Null Beam — continuous, drains energy.
+        Damage + kill handling live in Game._apply_beam so kills score,
+        spawn effects and are actually removed."""
         self.beam_active = True
-        # Damage enemies along beam
-        angle = math.atan2(dy, dx)
-        for e in enemies:
-            ex = e.pos.x - self.pos.x
-            ey = e.pos.y - self.pos.y
-            dist   = math.hypot(ex, ey)
-            if dist > 500:
-                continue
-            e_angle = math.atan2(ey, ex)
-            diff    = abs(math.atan2(math.sin(e_angle - angle),
-                                     math.cos(e_angle - angle)))
-            if diff < 0.18 and dist < 500:
-                e.take_damage(BEAM_DAMAGE_PS * dt)
         # Drain energy
         drain = BEAM_ENERGY_DRAIN * dt
         self.energy = max(0.0, self.energy - drain)
@@ -283,10 +288,7 @@ class Player:
         for i, tp in enumerate(self.trail):
             tt = i / max(n, 1)
             r  = max(1, int(self.radius * 0.55 * tt))
-            a  = int(170 * tt)
-            s  = pygame.Surface((r * 2 + 1, r * 2 + 1), pygame.SRCALPHA)
-            pygame.draw.circle(s, (*col, a), (r, r), r)
-            surf.blit(s, (int(tp.x) - r, int(tp.y) - r))
+            fade_circle(surf, col, tp, r, 170 * tt)
 
         cx, cy = int(self.pos.x), int(self.pos.y)
 
@@ -313,9 +315,7 @@ class Player:
 
         # Dash afterburner
         if self.is_dashing:
-            s = pygame.Surface((r * 4, r * 4), pygame.SRCALPHA)
-            pygame.draw.circle(s, (*CHAOS_COL, 90), (r * 2, r * 2), r + 6)
-            surf.blit(s, (cx - r * 2, cy - r * 2))
+            fade_circle(surf, CHAOS_COL, (cx, cy), r + 6, 90)
 
         # Invincibility flash ring
         if self.inv_timer > 0 and int(self.inv_timer * 10) % 2 == 0:
@@ -325,7 +325,5 @@ class Player:
         if self.beam_active:
             bx = int(self.pos.x + math.cos(self._angle) * 500)
             by = int(self.pos.y + math.sin(self._angle) * 500)
-            s  = pygame.Surface((W, H), pygame.SRCALPHA)
-            pygame.draw.line(s, (*WEAPON_COLORS[3], 180), (cx, cy), (bx, by), 3)
-            pygame.draw.line(s, (*WEAPON_COLORS[3], 80),  (cx, cy), (bx, by), 7)
-            surf.blit(s, (0, 0))
+            pygame.draw.line(surf, (*WEAPON_COLORS[3], 80),  (cx, cy), (bx, by), 7)
+            pygame.draw.line(surf, (*WEAPON_COLORS[3], 180), (cx, cy), (bx, by), 3)

@@ -1,10 +1,15 @@
 """
 particles.py — Extended particle system.
 Types: Particle (radial burst), Spark, Debris, Ring, TextPopup, DashTrail
+
+All motion is frame-rate independent (scaled by dt * 60) and all drawing uses
+cached sprites — no Surface is allocated per particle per frame.
 """
 from __future__ import annotations
 import math, random
 import pygame
+
+from utils.helpers import fade_circle, fade_ring
 
 
 class Particle:
@@ -23,8 +28,9 @@ class Particle:
         self.r        = random.randint(2, 5)
 
     def update(self, dt: float) -> None:
-        self.pos  += self.vel
-        self.vel  *= 0.90
+        k = dt * 60.0
+        self.pos  += self.vel * k
+        self.vel  *= 0.90 ** k
         self.life -= dt
 
     @property
@@ -32,15 +38,14 @@ class Particle:
         return self.life > 0
 
     def draw(self, surf: pygame.Surface) -> None:
-        a = int(255 * max(0.0, self.life / self.max_life))
-        r = self.r
-        s = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
-        pygame.draw.circle(s, (*self.color, a), (r, r), r)
-        surf.blit(s, (int(self.pos.x) - r, int(self.pos.y) - r))
+        fade_circle(surf, self.color, self.pos, self.r,
+                    255 * max(0.0, self.life / self.max_life))
 
 
 class Spark(Particle):
     """Linear fast particle with no friction — for block/explosion sparks."""
+    __slots__ = ()
+
     def __init__(self, x: float, y: float, color: tuple,
                  direction: float | None = None, speed_range: tuple = (4, 10)) -> None:
         super().__init__(x, y, color, speed_range)
@@ -56,12 +61,14 @@ class Spark(Particle):
         self.r        = random.randint(1, 3)
 
     def update(self, dt: float) -> None:
-        self.pos  += self.vel   # no friction — pure velocity
+        self.pos  += self.vel * (dt * 60.0)   # no friction — pure velocity
         self.life -= dt
 
 
 class Debris(Particle):
     """Particle affected by gravity — tumbles downward."""
+    __slots__ = ("gravity",)
+
     def __init__(self, x: float, y: float, color: tuple) -> None:
         super().__init__(x, y, color, (2, 6))
         self.gravity  = random.uniform(90, 170)   # px/s²
@@ -70,14 +77,16 @@ class Debris(Particle):
         self.r        = random.randint(2, 4)
 
     def update(self, dt: float) -> None:
+        k = dt * 60.0
         self.vel.y += self.gravity * dt
-        self.pos   += self.vel * dt * 60
-        self.vel   *= 0.97
+        self.pos   += self.vel * k
+        self.vel   *= 0.97 ** k
         self.life  -= dt
 
 
-class Ring(Particle):
+class Ring:
     """Expanding circle outline — for chaos activation, explosions."""
+
     def __init__(self, x: float, y: float, color: tuple,
                  start_r: int = 10, end_r: int = 90, dur: float = 0.45) -> None:
         self.pos      = pygame.Vector2(x, y)
@@ -99,17 +108,14 @@ class Ring(Particle):
         return self.life > 0
 
     def draw(self, surf: pygame.Surface) -> None:
-        a = int(200 * max(0.0, self.life / self.max_life))
-        r = self.r
-        if r <= 0:
-            return
-        s = pygame.Surface((r * 2 + 4, r * 2 + 4), pygame.SRCALPHA)
-        pygame.draw.circle(s, (*self.color, a), (r + 2, r + 2), r, 2)
-        surf.blit(s, (int(self.pos.x) - r - 2, int(self.pos.y) - r - 2))
+        # radius snapped to 4px steps to keep the ring-sprite cache small
+        fade_ring(surf, self.color, self.pos, (self.r // 4) * 4 or 4,
+                  200 * max(0.0, self.life / self.max_life))
 
 
-class DashTrail(Particle):
+class DashTrail:
     """Ghost afterimage at a given position for the player dash."""
+
     def __init__(self, x: float, y: float, color: tuple,
                  radius: int = 14) -> None:
         self.pos      = pygame.Vector2(x, y)
@@ -127,11 +133,8 @@ class DashTrail(Particle):
         return self.life > 0
 
     def draw(self, surf: pygame.Surface) -> None:
-        a = int(160 * max(0.0, self.life / self.max_life))
-        r = self.r
-        s = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
-        pygame.draw.circle(s, (*self.color, a), (r, r), r)
-        surf.blit(s, (int(self.pos.x) - r, int(self.pos.y) - r))
+        fade_circle(surf, self.color, self.pos, self.r,
+                    160 * max(0.0, self.life / self.max_life))
 
 
 class TextPopup:
@@ -145,10 +148,11 @@ class TextPopup:
         self.life     = dur
         self.max_life = dur
         self.vel      = pygame.Vector2(random.uniform(-18, 18), -60)
+        self._img     = font.render(text, True, self.color)   # rendered once
 
     def update(self, dt: float) -> None:
         self.pos  += self.vel * dt
-        self.vel  *= 0.94
+        self.vel  *= 0.94 ** (dt * 60.0)
         self.life -= dt
 
     @property
@@ -156,8 +160,6 @@ class TextPopup:
         return self.life > 0
 
     def draw(self, surf: pygame.Surface) -> None:
-        a   = int(255 * max(0.0, self.life / self.max_life))
-        txt = self.font.render(self.text, True, self.color)
-        txt.set_alpha(a)
-        surf.blit(txt, (int(self.pos.x) - txt.get_width() // 2,
-                        int(self.pos.y) - txt.get_height() // 2))
+        self._img.set_alpha(int(255 * max(0.0, self.life / self.max_life)))
+        surf.blit(self._img, (int(self.pos.x) - self._img.get_width() // 2,
+                              int(self.pos.y) - self._img.get_height() // 2))

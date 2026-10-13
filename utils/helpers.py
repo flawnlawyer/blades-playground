@@ -1,14 +1,90 @@
 import math
+from functools import lru_cache
+
 import pygame
 
+
+# ── Sprite caches ─────────────────────────────────────────────────────────────
+# Every glow / particle / panel used to allocate a fresh Surface on every draw
+# call (hundreds per frame).  These caches build each sprite once and reuse it.
+# Cached surfaces are shared: callers must only blit them, never draw onto them.
+
+@lru_cache(maxsize=8192)
+def _q_cached(color: tuple, step: int) -> tuple:
+    return tuple(min(255, int(round(c / step)) * step) for c in color)
+
+
+def _q(color: tuple, step: int = 8) -> tuple:
+    """Quantise an RGB colour so continuously-varying colours share sprites."""
+    return _q_cached(tuple(color[:3]), step)
+
+
+def _qa(alpha: float, step: int = 16) -> int:
+    """Quantise an alpha value (0-255) to a small set of levels."""
+    return max(0, min(255, int(round(alpha / step)) * step))
+
+
+@lru_cache(maxsize=4096)
+def circle_sprite(color: tuple, radius: int, alpha: int) -> pygame.Surface:
+    r = max(1, int(radius))
+    s = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
+    pygame.draw.circle(s, (*color[:3], alpha), (r, r), r)
+    return s
+
+
+@lru_cache(maxsize=2048)
+def ring_sprite(color: tuple, radius: int, alpha: int, width: int = 2) -> pygame.Surface:
+    r = max(1, int(radius))
+    s = pygame.Surface((r * 2 + 4, r * 2 + 4), pygame.SRCALPHA)
+    pygame.draw.circle(s, (*color[:3], alpha), (r + 2, r + 2), r, width)
+    return s
+
+
+@lru_cache(maxsize=512)
+def _rect_sprite(w: int, h: int, color: tuple, alpha: int, radius: int) -> pygame.Surface:
+    s = pygame.Surface((w, h), pygame.SRCALPHA)
+    pygame.draw.rect(s, (*color[:3], alpha), (0, 0, w, h), border_radius=radius)
+    return s
+
+
+@lru_cache(maxsize=256)
+def _border_sprite(w: int, h: int, color: tuple, radius: int) -> pygame.Surface:
+    s = pygame.Surface((w, h), pygame.SRCALPHA)
+    pygame.draw.rect(s, (*color[:3], 180), (0, 0, w, h), 2, border_radius=radius)
+    return s
+
+
+def fade_circle(surf: pygame.Surface, color: tuple, center: tuple,
+                radius: int, alpha: float) -> None:
+    """Blit a cached, alpha-quantised filled circle centred on *center*."""
+    a = _qa(alpha)
+    if a <= 0:
+        return
+    r = max(1, int(radius))
+    surf.blit(circle_sprite(_q(color), r, a),
+              (int(center[0]) - r, int(center[1]) - r))
+
+
+def fade_ring(surf: pygame.Surface, color: tuple, center: tuple,
+              radius: int, alpha: float) -> None:
+    a = _qa(alpha)
+    if a <= 0 or radius <= 0:
+        return
+    r = int(radius)
+    surf.blit(ring_sprite(_q(color), r, a),
+              (int(center[0]) - r - 2, int(center[1]) - r - 2))
+
+
+# ── Public drawing helpers (API unchanged) ────────────────────────────────────
 
 def glow_circle(surf: pygame.Surface, color: tuple, pos: tuple,
                 radius: int, alpha: int = 50) -> None:
     """Draw a soft radial glow centred at pos."""
-    r2 = radius * 2
-    s = pygame.Surface((r2 * 2, r2 * 2), pygame.SRCALPHA)
-    pygame.draw.circle(s, (*color[:3], alpha), (r2, r2), r2)
-    surf.blit(s, (int(pos[0]) - r2, int(pos[1]) - r2))
+    r2 = int(radius) * 2
+    if r2 <= 0:
+        return
+    surf.blit(circle_sprite(_q(color), r2, int(alpha)),
+              (int(pos[0]) - r2, int(pos[1]) - r2))
 
 
 def glow_circle_multi(surf: pygame.Surface, color: tuple, pos: tuple,
@@ -27,10 +103,8 @@ def alpha_rect(surf: pygame.Surface, color: tuple, rect: tuple,
     w, h = int(rect[2]), int(rect[3])
     if w <= 0 or h <= 0:
         return
-    s = pygame.Surface((w, h), pygame.SRCALPHA)
-    pygame.draw.rect(s, (*color[:3], alpha), (0, 0, w, h),
-                     border_radius=radius)
-    surf.blit(s, (int(rect[0]), int(rect[1])))
+    surf.blit(_rect_sprite(w, h, tuple(color[:3]), int(alpha), int(radius)),
+              (int(rect[0]), int(rect[1])))
 
 
 def draw_panel(surf: pygame.Surface, rect: tuple,
@@ -39,10 +113,11 @@ def draw_panel(surf: pygame.Surface, rect: tuple,
                alpha: int = 200, radius: int = 8) -> None:
     """Translucent dark panel with border."""
     alpha_rect(surf, bg_color, rect, alpha, radius)
-    s = pygame.Surface((rect[2], rect[3]), pygame.SRCALPHA)
-    pygame.draw.rect(s, (*border_color, 180), (0, 0, rect[2], rect[3]),
-                     2, border_radius=radius)
-    surf.blit(s, (rect[0], rect[1]))
+    w, h = int(rect[2]), int(rect[3])
+    if w <= 0 or h <= 0:
+        return
+    surf.blit(_border_sprite(w, h, tuple(border_color), int(radius)),
+              (int(rect[0]), int(rect[1])))
 
 
 def rotate_points(points: list, angle: float, cx: float, cy: float) -> list:
