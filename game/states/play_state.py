@@ -79,6 +79,13 @@ class PlayState(BaseState):
         if not self._game.game_over:
             self._game.update(dt)
 
+        # Wave cleared -> offer a perk (game is frozen while the picker is open)
+        if self._game.perk_pending and not self._game.game_over:
+            self._game.perk_pending = False
+            from game.states.perk_state import PerkState
+            self.manager.push(PerkState(self.manager, self._game))
+            return
+
         # Transition to game-over screen exactly once
         if self._game.game_over and not self._game._gameover_handled:
             self._game._gameover_handled = True
