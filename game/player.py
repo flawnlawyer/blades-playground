@@ -28,6 +28,7 @@ from utils.helpers import (glow_circle, glow_circle_multi, rotate_points,
 class Player:
     def __init__(self, x: float, y: float) -> None:
         self.pos          = pygame.Vector2(x, y)
+        self.perks: dict  = {}        # perk key -> stack count (shared with Game)
         self.radius       = PLAYER_RADIUS
         self.energy       = 0.0
         self.max_energy   = PLAYER_MAX_ENERGY
@@ -110,12 +111,12 @@ class Player:
         # Timers
         if self.hack_cd   > 0: self.hack_cd   -= dt
         if self.inv_timer > 0: self.inv_timer -= dt
-        if self.dash_charges < PLAYER_DASH_CHARGES:
+        if self.dash_charges < self.max_dash_charges:
             self._dash_recharge -= dt
             if self._dash_recharge <= 0:
                 self.dash_charges += 1
                 self._dash_recharge = (PLAYER_DASH_CHARGE_CD
-                                       if self.dash_charges < PLAYER_DASH_CHARGES else 0.0)
+                                       if self.dash_charges < self.max_dash_charges else 0.0)
         for i in range(5):
             if self._weapon_cds[i] > 0:
                 self._weapon_cds[i] -= dt
@@ -169,6 +170,10 @@ class Player:
         return True
 
     @property
+    def max_dash_charges(self) -> int:
+        return PLAYER_DASH_CHARGES + self.perks.get("phase_drive", 0)
+
+    @property
     def invulnerable(self) -> bool:
         """True during hit-recovery i-frames AND while dashing."""
         return self.inv_timer > 0 or self.is_dashing
@@ -184,11 +189,11 @@ class Player:
 
         if wi == 0 and cdl[0] <= 0:          # Plasma Bolt
             self._fire_plasma(dx, dy)
-            cdl[0] = PLASMA_CD
+            cdl[0] = PLASMA_CD * 0.75 ** self.perks.get("overclock", 0)
 
         elif wi == 1 and cdl[1] <= 0:        # Void Spread
             self._fire_spread(dx, dy)
-            cdl[1] = SPREAD_CD
+            cdl[1] = SPREAD_CD * 0.75 ** self.perks.get("overclock", 0)
 
         elif wi == 2 and cdl[2] <= 0:        # Chain Zap
             self._fire_chain(enemies)
@@ -205,10 +210,11 @@ class Player:
                 cdl[4] = 0.5
 
     def _fire_plasma(self, dx: float, dy: float) -> None:
-        self.new_projectiles.append(
-            Projectile(self.pos.x, self.pos.y, dx, dy,
-                       PLASMA_SPEED, PLASMA_DAMAGE, PLASMA_RANGE,
-                       Projectile.TYPE_PLASMA))
+        pr = Projectile(self.pos.x, self.pos.y, dx, dy,
+                        PLASMA_SPEED, PLASMA_DAMAGE, PLASMA_RANGE,
+                        Projectile.TYPE_PLASMA)
+        pr.pierce = self.perks.get("pierce", 0)
+        self.new_projectiles.append(pr)
 
     def _fire_spread(self, dx: float, dy: float) -> None:
         base_angle = math.atan2(dy, dx)
@@ -216,19 +222,21 @@ class Player:
         for i in range(SPREAD_COUNT):
             t = i / (SPREAD_COUNT - 1) - 0.5 if SPREAD_COUNT > 1 else 0
             a = base_angle + t * spread_rad
-            self.new_projectiles.append(
-                Projectile(self.pos.x, self.pos.y,
-                           math.cos(a), math.sin(a),
-                           SPREAD_SPEED, SPREAD_DAMAGE, 400,
-                           Projectile.TYPE_SPREAD))
+            pr = Projectile(self.pos.x, self.pos.y,
+                            math.cos(a), math.sin(a),
+                            SPREAD_SPEED, SPREAD_DAMAGE, 400,
+                            Projectile.TYPE_SPREAD)
+            pr.pierce = self.perks.get("pierce", 0)
+            self.new_projectiles.append(pr)
 
     def _fire_chain(self, enemies: list) -> None:
         """Chain zap — finds nearest enemies within range, chains."""
         remaining = list(enemies)
         origin    = pygame.Vector2(self.pos)
         targets   = []
-        for _ in range(CHAIN_LINKS):
-            best, best_d = None, CHAIN_RANGE
+        n_arc = self.perks.get("arc_lattice", 0)
+        for _ in range(CHAIN_LINKS + 2 * n_arc):
+            best, best_d = None, CHAIN_RANGE + 40 * n_arc
             for e in remaining:
                 d = origin.distance_to(e.pos)
                 if d < best_d:
@@ -263,7 +271,7 @@ class Player:
         self.energy = min(self.max_energy, self.energy + amt)
         if self.energy >= self.max_energy and not self.chaos_mode:
             self.chaos_mode  = True
-            self.chaos_timer = CHAOS_DURATION
+            self.chaos_timer = CHAOS_DURATION + 3.0 * self.perks.get("surge", 0)
             return True
         return False
 

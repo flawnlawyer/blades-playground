@@ -20,6 +20,13 @@ from game.constants import (
     BOSS_RADIUS, BOSS_HP, BOSS_PHASE2_HP,
     BOMB_FUSE,
     PLASMA_COL, SPREAD_COL, CHAIN_COL, BEAM_COL, BOMB_COL,
+    BERSERKER_RADIUS, BERSERKER_HP, BERSERKER_SPEED, BERSERKER_RAGE_SPEED,
+    BERSERKER_SCORE, BERSERKER_RAGE_HP_THRESH, BERSERKER_COL, BERSERKER_RAGE_COL,
+    TELEPORTER_RADIUS, TELEPORTER_HP, TELEPORTER_BLINK_CD, TELEPORTER_BLINK_RANGE,
+    TELEPORTER_VULN_TIME, TELEPORTER_SCORE, TELEPORTER_COL,
+    SHIELD_DRONE_RADIUS, SHIELD_DRONE_HP, SHIELD_DRONE_ORBIT_R, SHIELD_DRONE_ORBIT_SPD,
+    SHIELD_DRONE_SCORE, SHIELD_COL,
+    SPLITTER_RADIUS, SPLITTER_HP, SPLITTER_SCORE, SPLITTER_SPEED, SPLITTER_COL,
 )
 from utils.helpers import glow_circle, glow_circle_multi, rotate_points, _q, _qa
 
@@ -127,6 +134,10 @@ class Projectile:
         self.alive       = True
         self.radius      = 5
 
+        # Piercing (PIERCE perk): how many extra enemies it may pass through
+        self.pierce      = 0
+        self.hit_ids: set = set()
+
         # Bomb-specific
         self.fuse        = BOMB_FUSE   # seconds until detonation
         self.detonated   = False
@@ -184,8 +195,11 @@ class _BaseEnemy:
         self._glitch    = [0, 0]
         self.score_val  = 35
         self._k         = 1.0   # dt*60, refreshed every update
+        self.shield     = 0     # >0 while a Shield Drone protects this enemy
 
     def take_damage(self, dmg: float) -> bool:
+        if self.shield > 0:
+            return False
         self.hp -= dmg
         return self.hp <= 0
 
@@ -399,6 +413,201 @@ class Phantom(_BaseEnemy):
         surf.blit(_phantom_sprite(r, pulse_a), (cx - r - 10, cy - r - 10))
         if not self.stunned:
             glow_circle(surf, PHANTOM_COL, (cx, cy), r + 10, 20)
+        self._draw_hp_bar(surf, cx, cy, r)
+
+
+# ── Berserker ─────────────────────────────────────────────────────────────────
+
+class Berserker(_BaseEnemy):
+    """Slow tank. Below 50% HP it enrages and charges at full sprint."""
+    def __init__(self, x: float, y: float) -> None:
+        super().__init__(x, y, hp=BERSERKER_HP)
+        self.radius    = BERSERKER_RADIUS
+        self.score_val = BERSERKER_SCORE
+        self.enraged   = False
+        self.just_enraged = False      # consumed by Game for the rage effect
+
+    def take_damage(self, dmg: float) -> bool:
+        killed = super().take_damage(dmg)
+        if (not killed and not self.enraged
+                and self.hp / self.max_hp <= BERSERKER_RAGE_HP_THRESH):
+            self.enraged = True
+            self.just_enraged = True
+        return killed
+
+    def update(self, dt: float, player_pos: pygame.Vector2) -> None:
+        if self._tick_stun(dt):
+            return
+        d    = player_pos - self.pos
+        dist = d.length()
+        if dist > 0.001:
+            spd = BERSERKER_RAGE_SPEED if self.enraged else BERSERKER_SPEED * 1.4
+            self.pos += d / dist * spd * self._k
+        self.pos.x = max(self.radius, min(W - self.radius, self.pos.x))
+        self.pos.y = max(self.radius, min(H - self.radius, self.pos.y))
+
+    def draw(self, surf: pygame.Surface) -> None:
+        base = BERSERKER_RAGE_COL if self.enraged else BERSERKER_COL
+        col  = (80, 80, 100) if self.stunned else base
+        cx   = int(self.pos[0]) + self._glitch[0]
+        cy   = int(self.pos[1]) + self._glitch[1]
+        r    = self.radius
+        if not self.stunned:
+            pulse = abs(math.sin(self._phase * (2.5 if self.enraged else 1.0)))
+            glow_circle(surf, base, (cx, cy), r + 5 + int(pulse * (9 if self.enraged else 4)), 36)
+        # Spiked star: alternating outer/inner points
+        spin = self._phase * (0.9 if self.enraged else 0.25)
+        pts = []
+        for i in range(12):
+            rad = r + 5 if i % 2 == 0 else r - 4
+            a = spin + math.tau * i / 12
+            pts.append((cx + rad * math.cos(a), cy + rad * math.sin(a)))
+        pygame.draw.polygon(surf, col, pts)
+        pygame.draw.polygon(surf, WHITE, pts, 1)
+        self._draw_hp_bar(surf, cx, cy, r + 5)
+
+
+# ── Teleporter ────────────────────────────────────────────────────────────────
+
+class Teleporter(_BaseEnemy):
+    """Blinks around the player. Only vulnerable right after a blink — or while
+    stunned, so the HACK is the counter."""
+    def __init__(self, x: float, y: float) -> None:
+        super().__init__(x, y, hp=TELEPORTER_HP)
+        self.radius      = TELEPORTER_RADIUS
+        self.score_val   = TELEPORTER_SCORE
+        self._blink_cd   = random.uniform(1.0, TELEPORTER_BLINK_CD)
+        self._vuln       = 0.0
+        self.blink_event = False         # consumed by Game for the blink effect
+        self.blink_from  = pygame.Vector2(x, y)
+
+    @property
+    def vulnerable(self) -> bool:
+        return self._vuln > 0 or self.stunned
+
+    def take_damage(self, dmg: float) -> bool:
+        if not self.vulnerable:
+            return False
+        return super().take_damage(dmg)
+
+    def update(self, dt: float, player_pos: pygame.Vector2) -> None:
+        if self._tick_stun(dt):
+            return
+        self._vuln -= dt
+        self._blink_cd -= dt
+        d = player_pos - self.pos
+        if d.length() > 0.001:                       # slow drift between blinks
+            self.pos += d.normalize() * 1.0 * self._k
+        if self._blink_cd <= 0:
+            self._blink_cd  = TELEPORTER_BLINK_CD
+            self.blink_from = pygame.Vector2(self.pos)
+            ang  = random.uniform(0, math.tau)
+            dist = random.uniform(TELEPORTER_BLINK_RANGE * 0.55, TELEPORTER_BLINK_RANGE)
+            self.pos = pygame.Vector2(player_pos.x + math.cos(ang) * dist,
+                                      player_pos.y + math.sin(ang) * dist)
+            self._vuln       = TELEPORTER_VULN_TIME
+            self.blink_event = True
+        self.pos.x = max(self.radius, min(W - self.radius, self.pos.x))
+        self.pos.y = max(self.radius, min(H - self.radius, self.pos.y))
+
+    def draw(self, surf: pygame.Surface) -> None:
+        cx = int(self.pos[0]) + self._glitch[0]
+        cy = int(self.pos[1]) + self._glitch[1]
+        r  = self.radius
+        if self.stunned:
+            col = (80, 80, 100)
+        else:
+            col = TELEPORTER_COL
+        if self.vulnerable:
+            glow_circle(surf, (255, 255, 255), (cx, cy), r + 4, 40)   # "hit me now"
+        elif self._blink_cd < 0.45:                                   # telegraph the blink
+            if int(self._blink_cd * 24) % 2 == 0:
+                glow_circle(surf, col, (cx, cy), r + 10, 45)
+        else:
+            glow_circle(surf, col, (cx, cy), r + 3, 22)
+        # Hollow when invulnerable, solid when vulnerable
+        pts = [(cx, cy - r - 2), (cx + r, cy), (cx, cy + r + 2), (cx - r, cy)]
+        if self.vulnerable:
+            pygame.draw.polygon(surf, col, pts)
+        pygame.draw.polygon(surf, col if not self.vulnerable else WHITE, pts, 2)
+        self._draw_hp_bar(surf, cx, cy, r)
+
+
+# ── Shield Drone ──────────────────────────────────────────────────────────────
+
+class ShieldDrone(_BaseEnemy):
+    """Orbits another enemy and makes it immune. Kill the drone first."""
+    def __init__(self, x: float, y: float) -> None:
+        super().__init__(x, y, hp=SHIELD_DRONE_HP)
+        self.radius    = SHIELD_DRONE_RADIUS
+        self.score_val = SHIELD_DRONE_SCORE
+        self.host      = None            # assigned by Game each frame
+        self._orbit    = random.uniform(0, math.tau)
+
+    def update(self, dt: float, player_pos: pygame.Vector2) -> None:
+        if self._tick_stun(dt):
+            return
+        if self.host is not None:
+            self._orbit += SHIELD_DRONE_ORBIT_SPD * dt
+            target = self.host.pos + pygame.Vector2(
+                math.cos(self._orbit), math.sin(self._orbit)) * (SHIELD_DRONE_ORBIT_R + self.host.radius * 0.4)
+            self.pos += (target - self.pos) * min(1.0, 0.18 * self._k)
+        else:                                  # orphaned: harass the player
+            d = player_pos - self.pos
+            if d.length() > 0.001:
+                self.pos += d.normalize() * 2.0 * self._k
+        self.pos.x = max(self.radius, min(W - self.radius, self.pos.x))
+        self.pos.y = max(self.radius, min(H - self.radius, self.pos.y))
+
+    def draw(self, surf: pygame.Surface) -> None:
+        col = (80, 80, 100) if self.stunned else SHIELD_COL
+        cx  = int(self.pos[0]) + self._glitch[0]
+        cy  = int(self.pos[1]) + self._glitch[1]
+        r   = self.radius
+        if self.host is not None and not self.stunned:      # tether to the protected enemy
+            pygame.draw.line(surf, (*SHIELD_COL, 70), (cx, cy),
+                             (int(self.host.pos.x), int(self.host.pos.y)), 1)
+        if not self.stunned:
+            glow_circle(surf, SHIELD_COL, (cx, cy), r + 5, 32)
+        pts = [(cx + int(r * math.cos(self._phase + math.tau * i / 3)),
+                cy + int(r * math.sin(self._phase + math.tau * i / 3))) for i in range(3)]
+        pygame.draw.polygon(surf, col, pts)
+        pygame.draw.polygon(surf, WHITE, pts, 1)
+
+
+# ── Splitter ──────────────────────────────────────────────────────────────────
+
+class Splitter(_BaseEnemy):
+    """Chases the player; bursts into two Swarm Nodes when killed (see Game)."""
+    def __init__(self, x: float, y: float) -> None:
+        super().__init__(x, y, hp=SPLITTER_HP)
+        self.radius    = SPLITTER_RADIUS
+        self.score_val = SPLITTER_SCORE
+        self.speed     = SPLITTER_SPEED
+
+    def update(self, dt: float, player_pos: pygame.Vector2) -> None:
+        if self._tick_stun(dt):
+            return
+        d    = player_pos - self.pos
+        dist = d.length()
+        if dist > 0.001:
+            self.pos += d / dist * self.speed * 1.3 * self._k
+        self.pos.x = max(self.radius, min(W - self.radius, self.pos.x))
+        self.pos.y = max(self.radius, min(H - self.radius, self.pos.y))
+
+    def draw(self, surf: pygame.Surface) -> None:
+        col = (80, 80, 100) if self.stunned else SPLITTER_COL
+        cx  = int(self.pos[0]) + self._glitch[0]
+        cy  = int(self.pos[1]) + self._glitch[1]
+        r   = self.radius
+        if not self.stunned:
+            glow_circle(surf, SPLITTER_COL, (cx, cy), r + 6 + int(abs(math.sin(self._phase)) * 3), 30)
+        pts = [(cx + int(r * math.cos(-math.pi / 2 + math.tau * i / 5)),
+                cy + int(r * math.sin(-math.pi / 2 + math.tau * i / 5))) for i in range(5)]
+        pygame.draw.polygon(surf, col, pts)
+        pygame.draw.polygon(surf, WHITE, pts, 1)
+        # the seam it will split along
+        pygame.draw.line(surf, WHITE, (cx, cy - r + 3), (cx, cy + r - 3), 1)
         self._draw_hp_bar(surf, cx, cy, r)
 
 
