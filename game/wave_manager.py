@@ -14,9 +14,9 @@ WAVE_DEFS = [
     # Wave 2
     [("standard", 5), ("hunter", 2)],
     # Wave 3
-    [("standard", 3), ("swarm", 4), ("hunter", 1)],
+    [("standard", 3), ("swarm", 4), ("hunter", 1), ("splitter", 1)],
     # Wave 4
-    [("standard", 2), ("hunter", 2), ("phantom", 2)],
+    [("standard", 2), ("hunter", 2), ("phantom", 2), ("berserker", 1)],
     # Wave 5
     [("boss", 1), ("standard", 2)],
 ]
@@ -31,6 +31,7 @@ class WaveManager:
         self._pending_spawns: list[tuple] = []
         self.spawn_queue: list[tuple] = []   # consumed by play_state
         self.wave_just_started = False
+        self.wave_just_cleared = False   # True for one update when a wave is beaten
         self.boss_alive   = False
         self._all_dead_timer = 0.0  # small delay after all enemies die
 
@@ -44,6 +45,7 @@ class WaveManager:
         self.boss_alive        = boss_alive
         self.spawn_queue       = []
         self.wave_just_started = False
+        self.wave_just_cleared = False
 
         if self._state == "break":
             self._break_timer -= dt
@@ -56,6 +58,7 @@ class WaveManager:
                 self._all_dead_timer += dt
                 if self._all_dead_timer > 1.2:
                     self._all_dead_timer = 0.0
+                    self.wave_just_cleared = True
                     self._begin_break()
             else:
                 self._all_dead_timer = 0.0
@@ -96,6 +99,10 @@ class WaveManager:
                     ("hunter",   1 + n // 2),
                     ("phantom",  n // 2),
                     ("swarm",    n),
+                    ("splitter", n // 2),
+                    ("berserker", n // 3),
+                    ("teleporter", n // 2),
+                    ("shield_drone", 2 * (n // 3)),
                 ]
         for (etype, count) in defs:
             for _ in range(count):

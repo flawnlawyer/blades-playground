@@ -16,9 +16,15 @@ from game.constants import (
     CHAIN_DAMAGE, BEAM_DAMAGE_PS, BOSS_HP,
     FRAGMENTS,
     WEAPON_COLORS,
+    STREAK_RESET_TIME, STREAK_THRESHOLDS, STREAK_MULTIPLIERS,
+    DEATH_SLOW_FACTOR, DEATH_SLOW_DURATION,
+    SHIELD_COL, BERSERKER_RAGE_COL, TELEPORTER_COL, SPLITTER_COL,
 )
 from game.player       import Player
-from game.entities     import MehBlock, Fragment, Enemy, Hunter, SwarmNode, Phantom, Boss, Projectile
+from game.entities     import (MehBlock, Fragment, Enemy, Hunter, SwarmNode, Phantom, Boss,
+                               Projectile, Berserker, Teleporter, ShieldDrone, Splitter)
+from game.perks        import PERKS, roll_choices
+from utils.helpers     import fade_ring
 from game.particles    import Particle, DashTrail, Ring, TextPopup
 from game.renderer     import Renderer
 from game.audio        import SoundManager
@@ -97,6 +103,14 @@ class Game:
             self.enemies.append(SwarmNode(x, y))
         elif etype == "phantom":
             self.enemies.append(Phantom(x, y))
+        elif etype == "berserker":
+            self.enemies.append(Berserker(x, y))
+        elif etype == "teleporter":
+            self.enemies.append(Teleporter(x, y))
+        elif etype == "shield_drone":
+            self.enemies.append(ShieldDrone(x, y))
+        elif etype == "splitter":
+            self.enemies.append(Splitter(x, y))
         elif etype == "boss":
             tier = max(0, (self.wave_mgr.wave - 5) // 5)
             self.boss = Boss(W // 2, 80, hp=BOSS_HP + 8 * tier)
@@ -105,7 +119,9 @@ class Game:
     # ── State ─────────────────────────────────────────────────────────────────
 
     def _reset(self) -> None:
+        self.perks       : dict             = {}
         self.player      = Player(W // 2, H // 2)
+        self.player.perks = self.perks
         self.meh_blocks  : list[MehBlock]   = []
         self.fragments   : list[Fragment]   = []
         self.enemies     : list             = []
@@ -120,6 +136,17 @@ class Game:
         self.game_over   = False
         self._gameover_handled = False
         self.run_time    = 0.0
+        # Kill streak
+        self.streak       = 0
+        self.streak_timer = 0.0
+        # Death slow-motion
+        self.dying        = False
+        self._death_timer = 0.0
+        # Perks
+        self.perk_pending = False
+        self.perk_choices : list = []
+        self._second_wind_used = False
+        self._volatile_depth   = 0
         self.wave_mgr    = WaveManager()
         self.wave_mgr.start()
         self._spawn_mehs(22)
@@ -168,11 +195,19 @@ class Game:
     # ── Update ────────────────────────────────────────────────────────────────
 
     def update(self, dt: float) -> None:
+        real_dt = dt
+        if self.dying:                                   # death slow-motion
+            self._death_timer -= real_dt
+            dt = real_dt * DEATH_SLOW_FACTOR
+            if self._death_timer <= 0 and not self.game_over:
+                self.game_over = True
+                self.audio.game_over()
         self.run_time    += dt
-        self._last_dt     = dt
+        self._last_dt     = real_dt
         keys              = pygame.key.get_pressed()
         mouse_pos         = self._logical_mouse
-        mouse_buttons     = pygame.mouse.get_pressed()
+        mouse_buttons     = ((False, False, False) if self.dying
+                             else pygame.mouse.get_pressed())
         p                 = self.player
 
         p.update(keys, dt, mouse_pos, mouse_buttons, self.enemies)
@@ -195,6 +230,12 @@ class Game:
             if len(self.particles) < _PARTICLE_CAP:
                 self.particles.append(DashTrail(p.pos.x, p.pos.y, col, p.radius))
 
+        # Kill-streak decay
+        if self.streak > 0:
+            self.streak_timer -= dt
+            if self.streak_timer <= 0:
+                self.streak = 0
+
         for proj in self.projectiles:
             proj.update(dt)
 
@@ -206,13 +247,24 @@ class Game:
                 dead_projs.add(i)
                 continue
             for e in self.enemies[:]:
+                if id(e) in proj.hit_ids:
+                    continue
                 if e.pos.distance_to(proj.pos) < e.radius + proj.radius:
-                    killed = e.take_damage(proj.damage)
-                    self._burst(int(proj.pos.x), int(proj.pos.y), proj.color, 6, (1, 4))
+                    hp_before = e.hp
+                    killed    = e.take_damage(proj.damage)
+                    dealt     = killed or e.hp != hp_before
+                    if dealt:
+                        self._burst(int(proj.pos.x), int(proj.pos.y), proj.color, 6, (1, 4))
+                    else:                                    # shielded / invulnerable: deflected
+                        self._burst(int(proj.pos.x), int(proj.pos.y), (200, 210, 255), 4, (2, 5))
                     if killed:
                         self._on_enemy_killed(e)
-                    proj.alive = False
-                    dead_projs.add(i)
+                    if dealt and proj.pierce > 0:            # PIERCE: keep flying
+                        proj.pierce -= 1
+                        proj.hit_ids.add(id(e))
+                    else:
+                        proj.alive = False
+                        dead_projs.add(i)
                     break
             if self.boss and i not in dead_projs:
                 # Use vector math directly to avoid attribute access issues
@@ -247,7 +299,9 @@ class Game:
 
         for b in self.meh_blocks: b.update(dt)
         for f in self.fragments:  f.update(dt)
+        self._update_shields()
         for e in self.enemies:    e.update(dt, p.pos)
+        self._enemy_effects()
 
         if self.boss:
             self.boss.update(dt, p.pos)
@@ -278,6 +332,11 @@ class Game:
                 self.audio.boss_spawn()
             else:
                 self.audio.wave_start()
+        if self.wave_mgr.wave_just_cleared and not self.dying:
+            choices = roll_choices(self.perks)
+            if choices:
+                self.perk_choices = choices
+                self.perk_pending = True
 
     def _beam_hits(self, ent, cx: float, cy: float) -> bool:
         """Perpendicular-distance test against the beam ray (500px long)."""
@@ -322,14 +381,98 @@ class Game:
             else:
                 self.audio.boss_hit()
 
+    # ── Kill streak ───────────────────────────────────────────────────────────
+
+    def _streak_mult(self) -> float:
+        tier = sum(1 for t in STREAK_THRESHOLDS if self.streak >= t)
+        return STREAK_MULTIPLIERS[tier]
+
+    def _register_kill(self) -> float:
+        """Count a kill toward the streak; returns the multiplier to score it at."""
+        old = self._streak_mult()
+        self.streak      += 1
+        self.streak_timer = STREAK_RESET_TIME
+        new = self._streak_mult()
+        if new > old:
+            self._text_popup(self.player.pos.x, self.player.pos.y - 34,
+                             f"STREAK x{new:g}", CHAOS_COL)
+            self.audio.level_up()
+        return new
+
+    def _text_popup(self, x: float, y: float, text: str, color: tuple) -> None:
+        if len(self.particles) < _PARTICLE_CAP:
+            self.particles.append(TextPopup(x, y, text, color, self.ui.font_m, 1.6))
+
+    # ── Enemy helpers ─────────────────────────────────────────────────────────
+
+    def _update_shields(self) -> None:
+        """Shield Drones orbit a host enemy and make it immune while they live."""
+        for e in self.enemies:
+            e.shield = 0
+        for d in self.enemies:
+            if not isinstance(d, ShieldDrone):
+                continue
+            if d.host is None or d.host not in self.enemies:
+                best, best_d = None, 1e9
+                for h in self.enemies:
+                    if isinstance(h, ShieldDrone):
+                        continue
+                    dist = h.pos.distance_to(d.pos)
+                    if dist < best_d:
+                        best, best_d = h, dist
+                d.host = best
+            if d.host is not None and not d.stunned:
+                d.host.shield += 1
+
+    def _enemy_effects(self) -> None:
+        """Visual/audio reactions to enemy events raised during update."""
+        for e in self.enemies:
+            if isinstance(e, Berserker) and e.just_enraged:
+                e.just_enraged = False
+                x, y = int(e.pos.x), int(e.pos.y)
+                self._ring(x, y, BERSERKER_RAGE_COL, 10, 100, 0.45)
+                self._burst(x, y, BERSERKER_RAGE_COL, 18, (2, 8))
+                self.audio.boss_hit()
+                self.shake = max(self.shake, 7)
+            elif isinstance(e, Teleporter) and e.blink_event:
+                e.blink_event = False
+                self._ring(int(e.blink_from.x), int(e.blink_from.y), TELEPORTER_COL, 14, 40, 0.25)
+                self._ring(int(e.pos.x), int(e.pos.y), TELEPORTER_COL, 6, 46, 0.3)
+                self.audio.dash()
+
     def _on_enemy_killed(self, e) -> None:
+        if e not in self.enemies:          # already dead (beam + chain on same frame, etc.)
+            return
+        self.enemies.remove(e)
         ex, ey = int(e.pos.x), int(e.pos.y)
+        mult = self._register_kill()
+        pts  = int(round(e.score_val * mult))
         self._burst(ex, ey, ENEMY_COL, 20, (2, 7))
-        self._score_popup(ex, ey, e.score_val, ENEMY_COL)
-        self.score += e.score_val
-        self.shake  = 6
-        if e in self.enemies:
-            self.enemies.remove(e)
+        self._score_popup(ex, ey, pts, ENEMY_COL)
+        self.score += pts
+        self.shake  = max(self.shake, 6)
+        if isinstance(e, Splitter):        # bursts into two Swarm Nodes
+            self._ring(ex, ey, SPLITTER_COL, 8, 50, 0.3)
+            for sx in (-1, 1):
+                self.enemies.append(SwarmNode(ex + sx * 16, ey))
+        self._volatile_blast(e)
+
+    def _volatile_blast(self, src) -> None:
+        """VOLATILE CORE: kills detonate, damaging nearby enemies (can chain)."""
+        n = self.perks.get("volatile", 0)
+        if not n or self._volatile_depth >= 3:
+            return
+        self._volatile_depth += 1
+        pos = pygame.Vector2(src.pos)
+        self._ring(int(pos.x), int(pos.y), (255, 140, 40), 8, 80, 0.35)
+        self._burst(int(pos.x), int(pos.y), (255, 140, 40), 14, (2, 7))
+        for other in self.enemies[:]:
+            if other.pos.distance_to(pos) < 80 and other.take_damage(n + 1):
+                self._on_enemy_killed(other)
+        if self.boss and (self.boss.pos - pos).length() < 80 + self.boss.radius:
+            if self.boss.take_damage(n + 1):
+                self._on_boss_killed()
+        self._volatile_depth -= 1
 
     def _on_boss_killed(self) -> None:
         boss = self.boss
@@ -337,13 +480,71 @@ class Game:
             return
         pos = boss.pos
         bx, by = int(pos.x), int(pos.y)
+        mult = self._register_kill()
+        pts  = int(round(BOSS_SCORE_REWARD * mult))
         self._burst(bx, by, (0, 220, 255), 50, (3, 12))
         self._ring(bx, by, (0, 220, 255), 20, 200, 0.8)
-        self.score += BOSS_SCORE_REWARD
-        self._score_popup(bx, by, BOSS_SCORE_REWARD, (0, 220, 255))
+        self.score += pts
+        self._score_popup(bx, by, pts, (0, 220, 255))
         self.audio.level_up()
         self.shake = 20
         self.boss  = None
+
+    # ── Perks ─────────────────────────────────────────────────────────────────
+
+    def grant_perk(self, key: str) -> None:
+        perk = PERKS.get(key)
+        if perk is None or self.perks.get(key, 0) >= perk.max_stacks:
+            return
+        self.perks[key] = self.perks.get(key, 0) + 1
+        if key == "repair":
+            self.hp += 1
+        elif key == "phase_drive":
+            self.player.dash_charges += 1
+        self.perk_pending = False
+        self.perk_choices = []
+
+    # ── Damage to the player ──────────────────────────────────────────────────
+
+    def _hurt_player(self, src_pos, shake: int, burst_n: int, push_dist: float) -> None:
+        if self.dying:
+            return
+        p = self.player
+        self.hp        -= 1
+        p.inv_timer     = PLAYER_INV_DURATION
+        self.shake      = shake
+        self.streak     = 0                           # getting hit breaks the streak
+        self.audio.player_hit()
+        self._burst(int(p.pos.x), int(p.pos.y), ENEMY_COL, burst_n)
+        self.renderer.trigger_flash((210, 45, 75))
+        push = p.pos - src_pos
+        if push.length_squared() > 0:
+            p.pos += push.normalize() * push_dist
+            p.pos.x = max(p.radius, min(W - p.radius, p.pos.x))
+            p.pos.y = max(p.radius, min(H - p.radius, p.pos.y))
+        if self.hp <= 0:
+            self._on_lethal()
+
+    def _on_lethal(self) -> None:
+        p = self.player
+        if self.perks.get("second_wind") and not self._second_wind_used:
+            self._second_wind_used = True              # SECOND WIND
+            self.hp         = 1
+            p.inv_timer     = 2.0
+            for e in self.enemies:
+                e.stun()
+            if self.boss:
+                self.boss.stun()
+            self._ring(int(p.pos.x), int(p.pos.y), WHITE, 10, 260, 0.7)
+            self._burst(int(p.pos.x), int(p.pos.y), WHITE, 30, (3, 10))
+            self._text_popup(p.pos.x, p.pos.y - 40, "SECOND WIND", WHITE)
+            self.renderer.trigger_flash((255, 255, 255), 0.2)
+            self.audio.chaos_activate()
+            return
+        self.dying        = True                       # slow-motion, then game over
+        self._death_timer = DEATH_SLOW_DURATION
+        self.shake        = 18
+        self.renderer.trigger_flash((255, 255, 255), 0.25)
 
     def _handle_collisions(self) -> None:
         p = self.player
@@ -380,7 +581,7 @@ class Game:
                 self._burst(int(f.pos.x), int(f.pos.y), FRAG_COL, 24, (1, 6))
                 self.audio.fragment_collect()
                 self.fragments.remove(f)
-                triggered = p.add_energy(FRAG_ENERGY_REWARD)
+                triggered = p.add_energy(FRAG_ENERGY_REWARD * (1 + 0.4 * self.perks.get("salvage", 0)))
                 if triggered:
                     self._ring(int(p.pos.x), int(p.pos.y), CHAOS_COL, 10, 120, 0.55)
                     self.audio.chaos_activate()
@@ -394,20 +595,7 @@ class Game:
                     self._on_enemy_killed(e)
                     self.audio.meh_destroy()
                 elif not p.invulnerable:
-                    self.hp        -= 1
-                    p.inv_timer     = PLAYER_INV_DURATION
-                    self.shake      = 12
-                    self.audio.player_hit()
-                    self._burst(int(p.pos.x), int(p.pos.y), ENEMY_COL, 18)
-                    self.renderer.trigger_flash((210, 45, 75))
-                    push = (p.pos - e.pos)
-                    if push.length_squared() > 0:
-                        p.pos += push.normalize() * 70
-                        p.pos.x = max(p.radius, min(W - p.radius, p.pos.x))
-                        p.pos.y = max(p.radius, min(H - p.radius, p.pos.y))
-                    if self.hp <= 0:
-                        self.game_over = True
-                        self.audio.game_over()
+                    self._hurt_player(e.pos, 12, 18, 70)
 
         if self.boss and not self.boss.stunned and hasattr(self.boss, 'pos'):
             # use squared-length check to avoid relying on distance_to attribute
@@ -416,20 +604,7 @@ class Game:
                 if p.chaos_mode:
                     self._on_boss_killed()
                 elif not p.invulnerable:
-                    self.hp        -= 1
-                    p.inv_timer     = PLAYER_INV_DURATION
-                    self.shake      = 16
-                    self.audio.player_hit()
-                    self._burst(int(p.pos.x), int(p.pos.y), ENEMY_COL, 22)
-                    self.renderer.trigger_flash((210, 45, 75))
-                    push = (p.pos - self.boss.pos)
-                    if push.length_squared() > 0:
-                        p.pos += push.normalize() * 90
-                        p.pos.x = max(p.radius, min(W - p.radius, p.pos.x))
-                        p.pos.y = max(p.radius, min(H - p.radius, p.pos.y))
-                    if self.hp <= 0:
-                        self.game_over = True
-                        self.audio.game_over()
+                    self._hurt_player(self.boss.pos, 16, 22, 90)
 
     def _replenish(self) -> None:
         if len(self.meh_blocks) < MEH_SPAWN_MIN:
@@ -457,7 +632,10 @@ class Game:
         world.fill((0, 0, 0, 0))
         for b    in self.meh_blocks:  b.draw(world, self.ui.font_s)
         for f    in self.fragments:   f.draw(world)
-        for e    in self.enemies:     e.draw(world)
+        for e    in self.enemies:
+            e.draw(world)
+            if e.shield > 0:
+                fade_ring(world, SHIELD_COL, e.pos, e.radius + 9, 150)
         for pt   in self.particles:   pt.draw(world)
         for proj in self.projectiles: proj.draw(world)
         if self.boss:
@@ -475,6 +653,10 @@ class Game:
                          self.score, self.run_time, self.wave_mgr.wave,
                          wave_mgr=self.wave_mgr)
 
+        self.ui.draw_streak(surf, self.streak, self._streak_mult(),
+                            self.streak_timer / STREAK_RESET_TIME)
+        self.ui.draw_perks(surf, [(PERKS[k].name, n, PERKS[k].color)
+                                  for k, n in self.perks.items()])
         if self.boss:
             self.ui.draw_boss_bar(surf, self.boss)
 
