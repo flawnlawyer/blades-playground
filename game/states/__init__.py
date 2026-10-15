@@ -6,3 +6,4 @@ from game.states.pause_state      import PauseState
 from game.states.gameover_state   import GameOverState
 from game.states.highscores_state import HighScoresState
 from game.states.settings_state   import SettingsState
+from game.states.perk_state       import PerkState
