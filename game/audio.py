@@ -148,6 +148,42 @@ def _build_boss_hit():
     dur = 0.18
     return _make(_env(_sine(320, dur, 0.60) + _noise(dur, 0.40), 0.001, 0.08))
 
+def _build_perk_select():
+    """Bright rising arpeggio with a shimmer tail."""
+    notes = [523.25, 659.26, 783.99, 1046.50]
+    parts = [_env(_sine(f, 0.07, 0.5) + _sine(f * 2, 0.07, 0.12), 0.004, 0.03) for f in notes]
+    tail  = _env(_sine(2093.0, 0.22, 0.18), 0.01, 0.18)
+    return _make(np.concatenate(parts + [tail]))
+
+def _build_shield_break():
+    """Glassy crack: high noise burst over a falling ping."""
+    dur = 0.28
+    hi  = np.diff(_noise(dur, 1.0), prepend=0.0) * 0.5
+    return _make(_env(hi + _sweep(2400, 500, dur, 0.35), 0.001, 0.12))
+
+def _build_enrage():
+    """Low growl: falling sweep with tremolo."""
+    dur = 0.55
+    t   = np.linspace(0, dur, int(SR * dur), endpoint=False)
+    trem = 0.6 + 0.4 * np.sin(2 * np.pi * 22 * t)
+    sig  = (_sweep(170, 55, dur, 0.55) + _noise(dur, 0.12)) * trem
+    return _make(_env(sig, 0.01, 0.2))
+
+def _build_teleport():
+    """Zip up then down."""
+    up, down = _sweep(260, 1500, 0.06, 0.45), _sweep(1500, 420, 0.07, 0.35)
+    return _make(_env(np.concatenate([up, down]), 0.002, 0.03))
+
+def _build_streak_up():
+    notes = [783.99, 987.77, 1174.66]
+    return _make(np.concatenate([_env(_sine(f, 0.05, 0.5), 0.003, 0.02) for f in notes]))
+
+def _build_telegraph():
+    """Soft rising warning tone — a boss attack is about to fire."""
+    dur = 0.30
+    return _make(_env(_sweep(220, 520, dur, 0.22) + _sweep(440, 1040, dur, 0.08), 0.05, 0.12))
+
+
 def _build_level_up():
     """Ascending major chord: C5 E5 G5."""
     notes = [523.25, 659.26, 783.99]
@@ -163,6 +199,7 @@ def _build_ambient_drone(base_hz: float = 60.0, chaos: bool = False) -> pygame.m
     base_hz: 60 (low energy) → 110 (full energy → chaos)
     """
     dur = 2.0   # 2-second loop
+    base_hz = float(max(1, round(base_hz)))     # whole Hz => whole cycles per loop => no click at the seam
     sig = _sine(base_hz, dur, 0.25)
     sig += _sine(base_hz * 1.5, dur, 0.08)
     if chaos:
@@ -184,6 +221,7 @@ class SoundManager:
         self._drone_channel: pygame.mixer.Channel | None = None
         self._drone_hz   = 60.0
         self._chaos_drone = False
+        self._drones: dict = {}
         self._build_all()
         self._start_drone()
 
@@ -209,6 +247,12 @@ class SoundManager:
             "boss_spawn":       _build_boss_spawn,
             "boss_hit":         _build_boss_hit,
             "level_up":         _build_level_up,
+            "perk_select":      _build_perk_select,
+            "shield_break":     _build_shield_break,
+            "enrage":           _build_enrage,
+            "teleport":         _build_teleport,
+            "streak_up":        _build_streak_up,
+            "telegraph":        _build_telegraph,
         }
         for name, fn in builders.items():
             try:
@@ -237,7 +281,10 @@ class SoundManager:
         self._drone_hz    = target_hz
         self._chaos_drone = chaos
         try:
-            drone = _build_ambient_drone(target_hz, chaos)
+            key = (int(round(target_hz)), chaos)
+            drone = self._drones.get(key)
+            if drone is None:
+                drone = self._drones[key] = _build_ambient_drone(target_hz, chaos)
             v = self.volume * 0.35
             if self._muted:
                 v = 0.0

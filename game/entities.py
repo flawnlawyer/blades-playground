@@ -3,7 +3,7 @@ entities.py — MehBlock, Fragment, and all enemy types + Projectile.
 Enemies: Standard, Hunter, Swarm, Phantom, Boss (The Architect)
 """
 from __future__ import annotations
-import math, random
+import math, random, colorsys
 from functools import lru_cache
 import pygame
 
@@ -27,7 +27,10 @@ from game.constants import (
     SHIELD_DRONE_RADIUS, SHIELD_DRONE_HP, SHIELD_DRONE_ORBIT_R, SHIELD_DRONE_ORBIT_SPD,
     SHIELD_DRONE_SCORE, SHIELD_COL,
     SPLITTER_RADIUS, SPLITTER_HP, SPLITTER_SCORE, SPLITTER_SPEED, SPLITTER_COL,
+    PRISM_HP, PRISM_RADIUS, PRISM_SCORE, PRISM_COL,
+    ENEMY_BULLET_RADIUS, ENEMY_BULLET_COL,
 )
+from utils import helpers as _helpers
 from utils.helpers import glow_circle, glow_circle_multi, rotate_points, _q, _qa
 
 
@@ -196,6 +199,7 @@ class _BaseEnemy:
         self.score_val  = 35
         self._k         = 1.0   # dt*60, refreshed every update
         self.shield     = 0     # >0 while a Shield Drone protects this enemy
+        self._dead      = False # set by Game on kill; lets stale spatial-hash entries be skipped
 
     def take_damage(self, dmg: float) -> bool:
         if self.shield > 0:
@@ -228,6 +232,8 @@ class _BaseEnemy:
         pass
 
     def _draw_hp_bar(self, surf: pygame.Surface, cx: int, cy: int, r: int) -> None:
+        if _helpers.LOD:
+            return
         if self.hp >= self.max_hp:
             return
         bw = r * 2 + 4
@@ -628,6 +634,8 @@ class Boss(_BaseEnemy):
     """
     SPAWN_CD_P1 = 8.0
     SPAWN_CD_P2 = 5.0
+    name        = "THE ARCHITECT"
+    bar_color   = BOSS_COL
 
     def __init__(self, x: float, y: float, hp: float = BOSS_HP) -> None:
         super().__init__(x, y, hp=hp)
@@ -711,3 +719,198 @@ class Boss(_BaseEnemy):
         # Phase 2 indicator
         if self.is_phase2:
             surf.blit(_phase2_overlay(r), (cx - r, cy - r))
+
+
+# ── Enemy bullet ──────────────────────────────────────────────────────────────
+
+class EnemyBullet:
+    """Hostile projectile.  Velocity is in px/second.  Dash i-frames dodge it,
+    Chaos Mode destroys it on contact, and HACK clears bullets in range."""
+    __slots__ = ("pos", "vel", "radius", "color", "life", "alive")
+
+    def __init__(self, x: float, y: float, vx: float, vy: float,
+                 color: tuple = ENEMY_BULLET_COL, radius: int = ENEMY_BULLET_RADIUS) -> None:
+        self.pos    = pygame.Vector2(x, y)
+        self.vel    = pygame.Vector2(vx, vy)
+        self.radius = radius
+        self.color  = color
+        self.life   = 8.0
+        self.alive  = True
+
+    def update(self, dt: float) -> None:
+        self.pos  += self.vel * dt
+        self.life -= dt
+        if self.life <= 0 or not (-30 < self.pos.x < W + 30 and -30 < self.pos.y < H + 30):
+            self.alive = False
+
+    def draw(self, surf: pygame.Surface) -> None:
+        x, y = int(self.pos.x), int(self.pos.y)
+        glow_circle(surf, self.color, (x, y), self.radius + 3, 38)
+        pygame.draw.circle(surf, self.color, (x, y), self.radius)
+        pygame.draw.circle(surf, WHITE, (x, y), max(1, self.radius - 3))
+
+
+# ── Boss — The Prism ──────────────────────────────────────────────────────────
+
+_PRISM_PALETTE = [tuple(int(c * 255) for c in colorsys.hsv_to_rgb(i / 6, 0.62, 1.0))
+                  for i in range(6)]
+# Each attack telegraphs in its own colour for 0.65 s before it fires.
+_ATTACK_COL = {"spiral": (170, 100, 255), "ring": (80, 230, 255),
+               "aimed": (255, 70, 70),    "bloom": (120, 255, 150)}
+
+
+class Prism(_BaseEnemy):
+    """
+    The Prism — a bullet-hell boss.  It drifts across the top of the arena and
+    cycles through telegraphed attacks:
+
+      SPIRAL  rotating arms of bullets        RING   a ring with one gap to find
+      AIMED   fan of shots at you             BLOOM  (phase 2) slow dense rings
+
+    Below half HP (phase 2) it moves wider, fires faster, adds BLOOM and calls
+    in Swarm Nodes once.  Dash i-frames dodge bullets, Chaos Mode erases them,
+    HACK clears the ones near you.  Stunning it (HACK range / Second Wind) pauses
+    its attacks.
+    """
+    name      = "THE PRISM"
+    bar_color = PRISM_COL
+    ATTACKS_P1 = ("spiral", "ring", "aimed")
+    ATTACKS_P2 = ("spiral", "ring", "aimed", "bloom")
+
+    def __init__(self, x: float, y: float, hp: float = PRISM_HP) -> None:
+        super().__init__(x, y, hp=hp)
+        self._p2_hp       = max(1, int(hp) // 2)
+        self.radius       = PRISM_RADIUS
+        self.score_val    = PRISM_SCORE
+        self.phase        = 1
+        self.just_phase2  = False                 # consumed by Game for the transition effect
+        self.spawn_queue: list  = []
+        self.bullet_queue: list = []              # (x, y, vx, vy) in px/s, consumed by Game
+        self._t           = 0.0
+        self._state       = "rest"                # rest -> warn -> fire -> rest ...
+        self._state_t     = 1.5
+        self._attack      = "spiral"
+        self._attack_i    = 0
+        self._shot_cd     = 0.0
+        self._spin        = 0.0
+        self._ring_cd     = 0.0
+        self._rings_left  = 0
+
+    @property
+    def is_phase2(self) -> bool:
+        return self.hp <= self._p2_hp
+
+    # ── behaviour ────────────────────────────────────────────────────────────
+
+    def update(self, dt: float, player_pos: pygame.Vector2) -> None:
+        self._tick_stun(dt)
+        if self.stunned:
+            return
+        self._t += dt
+        if self.is_phase2 and self.phase == 1:
+            self.phase       = 2
+            self.just_phase2 = True
+            self._state, self._state_t = "rest", 1.2
+            for i in range(3):                    # call in reinforcements once
+                a = math.tau * i / 3
+                self.spawn_queue.append(("swarm", self.pos.x + math.cos(a) * 70,
+                                         self.pos.y + math.sin(a) * 70))
+
+        p2 = self.phase == 2
+        tx = W / 2 + math.cos(self._t * (0.7 if p2 else 0.45)) * (430 if p2 else 380)
+        ty = 150 + math.sin(self._t * 0.9) * (90 if p2 else 40)
+        self.pos += (pygame.Vector2(tx, ty) - self.pos) * min(1.0, 0.06 * self._k)
+
+        self._state_t -= dt
+        if self._state == "rest":
+            if self._state_t <= 0:
+                attacks      = self.ATTACKS_P2 if p2 else self.ATTACKS_P1
+                self._attack = attacks[self._attack_i % len(attacks)]
+                self._attack_i += 1
+                self._state, self._state_t = "warn", 0.65
+        elif self._state == "warn":
+            if self._state_t <= 0:
+                self._state = "fire"
+                self._begin_fire(player_pos)
+        else:
+            self._fire(dt, player_pos)
+            if self._state_t <= 0:
+                self._state, self._state_t = "rest", (0.6 if p2 else 0.9)
+
+    def _emit(self, angle: float, speed: float) -> None:
+        self.bullet_queue.append((self.pos.x, self.pos.y,
+                                  math.cos(angle) * speed, math.sin(angle) * speed))
+
+    def _begin_fire(self, player_pos: pygame.Vector2) -> None:
+        p2 = self.phase == 2
+        self._shot_cd = 0.0
+        if self._attack == "spiral":
+            self._state_t = 3.6 if p2 else 3.2
+        elif self._attack == "ring":
+            self._rings_left = 2 if p2 else 1
+            self._ring_cd    = 0.0
+            self._state_t    = 0.1 + (0.55 if p2 else 0.0)
+        elif self._attack == "aimed":
+            self._state_t = 1.6 if p2 else 1.3
+        else:                                      # bloom
+            self._state_t = 2.0
+
+    def _fire(self, dt: float, player_pos: pygame.Vector2) -> None:
+        p2 = self.phase == 2
+        if self._attack == "spiral":
+            interval, arms, speed = (0.055, 4, 215) if p2 else (0.085, 3, 190)
+            self._shot_cd -= dt
+            while self._shot_cd <= 0:
+                self._shot_cd += interval
+                self._spin   += 0.31
+                for k in range(arms):
+                    self._emit(self._spin + math.tau * k / arms, speed)
+        elif self._attack == "ring":
+            self._ring_cd -= dt
+            if self._rings_left > 0 and self._ring_cd <= 0:
+                self._rings_left -= 1
+                self._ring_cd     = 0.55
+                n, gap_w, speed   = (34, 0.36, 185) if p2 else (26, 0.42, 160)
+                gap = random.uniform(0, math.tau)
+                for i in range(n):
+                    a = math.tau * i / n
+                    d = abs((a - gap + math.pi) % math.tau - math.pi)
+                    if d > gap_w:                  # leave a gap to slip through
+                        self._emit(a, speed)
+        elif self._attack == "aimed":
+            interval, shots, spread = (0.34, 5, 0.22) if p2 else (0.42, 3, 0.20)
+            self._shot_cd -= dt
+            while self._shot_cd <= 0:
+                self._shot_cd += interval
+                base = math.atan2(player_pos.y - self.pos.y, player_pos.x - self.pos.x)
+                for k in range(shots):
+                    self._emit(base + (k - (shots - 1) / 2) * spread, 270)
+        else:                                      # bloom
+            self._shot_cd -= dt
+            while self._shot_cd <= 0:
+                self._shot_cd += 0.5
+                self._spin    += 0.2
+                for k in range(14):
+                    self._emit(self._spin + math.tau * k / 14, 120)
+
+    # ── drawing ──────────────────────────────────────────────────────────────
+
+    def draw(self, surf: pygame.Surface) -> None:
+        cx, cy = int(self.pos[0]), int(self.pos[1])
+        r      = self.radius
+        col    = (80, 80, 100) if self.stunned else PRISM_COL
+        if not self.stunned:
+            glow_circle_multi(surf, col, (cx, cy), r, 3)
+            if self._state == "warn":              # telegraph: attack-coloured halo
+                wc = _ATTACK_COL[self._attack]
+                glow_circle(surf, wc, (cx, cy), r + 16 + int(abs(math.sin(self._t * 14)) * 8), 55)
+        rot = self._t * 0.6
+        pts = [(cx + r * math.cos(rot + math.tau * i / 6),
+                cy + r * math.sin(rot + math.tau * i / 6)) for i in range(6)]
+        shift = int(self._t * 2)
+        for i in range(6):                         # rainbow facets
+            tri = [(cx, cy), pts[i], pts[(i + 1) % 6]]
+            pygame.draw.polygon(surf, (70, 70, 90) if self.stunned
+                                else _PRISM_PALETTE[(i + shift) % 6], tri)
+        pygame.draw.polygon(surf, WHITE, pts, 2)
+        pygame.draw.circle(surf, WHITE, (cx, cy), 6)
