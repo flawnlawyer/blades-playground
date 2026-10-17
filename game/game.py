@@ -17,21 +17,29 @@ from game.constants import (
     FRAGMENTS,
     WEAPON_COLORS,
     STREAK_RESET_TIME, STREAK_THRESHOLDS, STREAK_MULTIPLIERS,
+    PRISM_HP, MAX_ENEMY_BULLETS,
     DEATH_SLOW_FACTOR, DEATH_SLOW_DURATION,
     SHIELD_COL, BERSERKER_RAGE_COL, TELEPORTER_COL, SPLITTER_COL,
 )
 from game.player       import Player
 from game.entities     import (MehBlock, Fragment, Enemy, Hunter, SwarmNode, Phantom, Boss,
-                               Projectile, Berserker, Teleporter, ShieldDrone, Splitter)
+                               Projectile, Berserker, Teleporter, ShieldDrone, Splitter,
+                               Prism, EnemyBullet)
 from game.perks        import PERKS, roll_choices
+from game.music        import MusicEngine
 from utils.helpers     import fade_ring
+from utils             import helpers as _helpers
+from utils.spatial     import SpatialHash
+from game.dust         import DustField
 from game.particles    import Particle, DashTrail, Ring, TextPopup
 from game.renderer     import Renderer
 from game.audio        import SoundManager
 from game.ui           import UI
-from game.wave_manager import WaveManager
+from game.wave_manager import WaveManager, boss_kind, BOSS_NAMES
 
 _PARTICLE_CAP = 200
+_MAX_ENEMY_R   = 32      # broad-phase query padding (largest non-boss enemy radius + margin)
+_LOD_ENEMIES   = 120     # above this many enemies, skip glows / HP bars
 
 
 class Game:
@@ -40,10 +48,16 @@ class Game:
     Used by PlayState — does NOT own the main loop or the display surface.
     """
 
-    def __init__(self, manager=None) -> None:
+    def __init__(self, manager=None, seed: int | None = None) -> None:
         self.manager  = manager
+        self.seed     = seed                       # not None => daily run
+        self.daily    = seed is not None
+        self.daily_date: str | None = None
+        self.rng      = random.Random(seed)        # arena layout / replenishment
+        self._spawn_rng = random if seed is None else random.Random(f"{seed}:w0")
         self.clock    = pygame.time.Clock()
         self.audio    = SoundManager()
+        self.music    = MusicEngine(self.audio)      # layered, state-reactive music
         self.ui       = UI()
         self.renderer = Renderer()
         self.wave_mgr = WaveManager()
@@ -68,8 +82,8 @@ class Game:
     def _spawn_mehs(self, n: int) -> None:
         for _ in range(n):
             for _ in range(30):
-                x = random.randint(60, W - 100)
-                y = random.randint(60, H - 100)
+                x = self.rng.randint(60, W - 100)
+                y = self.rng.randint(60, H - 100)
                 if pygame.Vector2(x + 19, y + 19).distance_to(self.player.pos) > 90:
                     self.meh_blocks.append(MehBlock(x, y))
                     break
@@ -77,24 +91,24 @@ class Game:
     def _spawn_frags(self, n: int) -> None:
         used = {f.text for f in self.fragments}
         pool = [t for t in FRAGMENTS if t not in used]
-        random.shuffle(pool)
+        self.rng.shuffle(pool)
         for i in range(min(n, len(pool))):
-            x = random.randint(80, W - 80)
-            y = random.randint(80, H - 80)
+            x = self.rng.randint(80, W - 80)
+            y = self.rng.randint(80, H - 80)
             self.fragments.append(Fragment(x, y, pool[i]))
 
     def _spawn_entity(self, etype: str, x: float | None = None, y: float | None = None) -> None:
         if x is None or y is None:
             for _ in range(50):
-                x = float(random.randint(60, W - 60))
-                y = float(random.randint(60, H - 60))
+                x = float(self._spawn_rng.randint(60, W - 60))
+                y = float(self._spawn_rng.randint(60, H - 60))
                 if pygame.Vector2(x, y).distance_to(self.player.pos) > 180:
                     break
         # Ensure x and y are floats (type-checkers may still consider them Optional)
         if x is None:
-            x = float(random.randint(60, W - 60))
+            x = float(self._spawn_rng.randint(60, W - 60))
         if y is None:
-            y = float(random.randint(60, H - 60))
+            y = float(self._spawn_rng.randint(60, H - 60))
         if etype == "standard":
             self.enemies.append(Enemy(x, y))
         elif etype == "hunter":
@@ -112,14 +126,24 @@ class Game:
         elif etype == "splitter":
             self.enemies.append(Splitter(x, y))
         elif etype == "boss":
-            tier = max(0, (self.wave_mgr.wave - 5) // 5)
-            self.boss = Boss(W // 2, 80, hp=BOSS_HP + 8 * tier)
+            wave = self.wave_mgr.wave
+            tier = max(0, (wave - 5) // 5)
+            if boss_kind(wave) == "prism":
+                self.boss = Prism(W // 2, 130, hp=PRISM_HP + 10 * tier)
+            else:
+                self.boss = Boss(W // 2, 80, hp=BOSS_HP + 8 * tier)
+            self.enemy_bullets.clear()
             self.audio.boss_spawn()
 
     # ── State ─────────────────────────────────────────────────────────────────
 
     def _reset(self) -> None:
         self.perks       : dict             = {}
+        self.dust        = DustField()                  # NumPy-vectorised spark field
+        self._eh         = SpatialHash(64)              # enemy broad-phase
+        self.stress_target = getattr(self, "stress_target", 0)
+        self.show_debug  = getattr(self, "show_debug", False)
+        self.debug_info  : list = []
         self.player      = Player(W // 2, H // 2)
         self.player.perks = self.perks
         self.meh_blocks  : list[MehBlock]   = []
@@ -127,6 +151,9 @@ class Game:
         self.enemies     : list             = []
         self.projectiles : list[Projectile] = []
         self.particles   : list             = []
+        self.enemy_bullets : list           = []
+        self._hitstop_t  = 0.0
+        self._boss_state_prev = None
         self.boss        : Boss | None      = None
         self.hp          = 3
         self.score       = 0
@@ -159,6 +186,8 @@ class Game:
         space = _PARTICLE_CAP - len(self.particles)
         for _ in range(min(n, space)):
             self.particles.append(Particle(x, y, color, spd))
+        # Plus a vectorised spray of fine sparks (px/frame -> px/s)
+        self.dust.emit(x, y, n * 4, color, speed=(spd[0] * 55.0, spd[1] * 70.0))
 
     def _ring(self, x: float, y: float, color: tuple,
               start_r: int = 10, end_r: int = 90, dur: float = 0.45) -> None:
@@ -187,6 +216,11 @@ class Game:
                 self._burst(int(e.pos.x), int(e.pos.y), (80, 220, 120), 14)
                 self.audio.enemy_stun()
                 hit = True
+        for b in self.enemy_bullets:                 # HACK also scrubs hostile bullets in range
+            if b.alive and b.pos.distance_to(self.player.pos) < rng:
+                b.alive = False
+                self.dust.emit(b.pos.x, b.pos.y, 6, (80, 220, 120), speed=(40.0, 160.0))
+                hit = True
         if hit:
             self.player.trigger_hack()
             self.shake = 5
@@ -202,12 +236,18 @@ class Game:
             if self._death_timer <= 0 and not self.game_over:
                 self.game_over = True
                 self.audio.game_over()
+        if self._hitstop_t > 0:                         # hit-stop: freeze the world for a few frames
+            self._hitstop_t -= real_dt
+            self.renderer.update(real_dt, self.player.chaos_mode)
+            return
         self.run_time    += dt
         self._last_dt     = real_dt
         keys              = pygame.key.get_pressed()
         mouse_pos         = self._logical_mouse
         mouse_buttons     = ((False, False, False) if self.dying
                              else pygame.mouse.get_pressed())
+        if self.stress_target:                      # hands-free stress test: hold fire
+            mouse_buttons = (True, False, False)
         p                 = self.player
 
         p.update(keys, dt, mouse_pos, mouse_buttons, self.enemies)
@@ -239,6 +279,9 @@ class Game:
         for proj in self.projectiles:
             proj.update(dt)
 
+        if self.projectiles:                       # broad-phase only needed when something can hit
+            self._eh.rebuild(self.enemies)
+        self.dust.update(dt)
         dead_projs = set()
         for i, proj in enumerate(self.projectiles):
             if not proj.alive:
@@ -246,26 +289,31 @@ class Game:
                     self._handle_bomb_explosion(proj)
                 dead_projs.add(i)
                 continue
-            for e in self.enemies[:]:
-                if id(e) in proj.hit_ids:
+            # Broad-phase: only enemies in nearby grid cells; hit the NEAREST one
+            best, best_d = None, 1e9
+            for e in self._eh.nearby(proj.pos.x, proj.pos.y, proj.radius + _MAX_ENEMY_R):
+                if e._dead or id(e) in proj.hit_ids:
                     continue
-                if e.pos.distance_to(proj.pos) < e.radius + proj.radius:
-                    hp_before = e.hp
-                    killed    = e.take_damage(proj.damage)
-                    dealt     = killed or e.hp != hp_before
-                    if dealt:
-                        self._burst(int(proj.pos.x), int(proj.pos.y), proj.color, 6, (1, 4))
-                    else:                                    # shielded / invulnerable: deflected
-                        self._burst(int(proj.pos.x), int(proj.pos.y), (200, 210, 255), 4, (2, 5))
-                    if killed:
-                        self._on_enemy_killed(e)
-                    if dealt and proj.pierce > 0:            # PIERCE: keep flying
-                        proj.pierce -= 1
-                        proj.hit_ids.add(id(e))
-                    else:
-                        proj.alive = False
-                        dead_projs.add(i)
-                    break
+                d = e.pos.distance_to(proj.pos)
+                if d < e.radius + proj.radius and d < best_d:
+                    best, best_d = e, d
+            if best is not None:
+                e         = best
+                hp_before = e.hp
+                killed    = e.take_damage(proj.damage)
+                dealt     = killed or e.hp != hp_before
+                if dealt:
+                    self._burst(int(proj.pos.x), int(proj.pos.y), proj.color, 6, (1, 4))
+                else:                                    # shielded / invulnerable: deflected
+                    self._burst(int(proj.pos.x), int(proj.pos.y), (200, 210, 255), 4, (2, 5))
+                if killed:
+                    self._on_enemy_killed(e)
+                if dealt and proj.pierce > 0:            # PIERCE: keep flying
+                    proj.pierce -= 1
+                    proj.hit_ids.add(id(e))
+                else:
+                    proj.alive = False
+                    dead_projs.add(i)
             if self.boss and i not in dead_projs:
                 # Use vector math directly to avoid attribute access issues
                 if (self.boss.pos - proj.pos).length() < self.boss.radius + proj.radius:
@@ -308,6 +356,26 @@ class Game:
             for item in self.boss.spawn_queue:
                 self._spawn_entity(item[0], item[1], item[2])
             self.boss.spawn_queue.clear()
+            st = getattr(self.boss, "_state", None)
+            if st == "warn" and self._boss_state_prev != "warn":
+                self.audio.play("telegraph")
+            self._boss_state_prev = st
+            bq = getattr(self.boss, "bullet_queue", None)
+            if bq:
+                room = MAX_ENEMY_BULLETS - len(self.enemy_bullets)
+                for (bx, by, vx, vy) in bq[:max(0, room)]:
+                    self.enemy_bullets.append(EnemyBullet(bx, by, vx, vy))
+                bq.clear()
+            if getattr(self.boss, "just_phase2", False):
+                self.boss.just_phase2 = False
+                bx, by = int(self.boss.pos.x), int(self.boss.pos.y)
+                self._ring(bx, by, (255, 60, 60), 20, 260, 0.7)
+                self.dust.emit(bx, by, 400, (255, 80, 80), speed=(80.0, 420.0), life=(0.4, 1.0))
+                self.shake = 16
+                self._freeze(0.14)
+                self.renderer.trigger_flash((255, 60, 60), 0.18)
+                self.audio.boss_spawn()
+        self._update_bullets(dt)
 
         self.particles = [pt for pt in self.particles if pt.alive]
         if len(self.particles) > _PARTICLE_CAP:
@@ -322,21 +390,76 @@ class Game:
         self._handle_collisions()
         self._replenish()
 
+        self.music.update(real_dt, enemies=len(self.enemies), boss=self.boss is not None,
+                          chaos=p.chaos_mode, streak=self.streak,
+                          wave=self.wave_mgr.wave, dying=self.dying)
+        if self.stress_target:
+            self._stress_tick()
+            return
         # Wave system
         self.wave_mgr.update(dt, len(self.enemies), self.boss is not None)
+        if self.wave_mgr.wave_just_started and self.seed is not None:
+            self._spawn_rng = random.Random(f"{self.seed}:w{self.wave_mgr.wave}")
         for spawn in self.wave_mgr.spawn_queue:
             self._spawn_entity(spawn[0])
         if self.wave_mgr.wave_just_started:
-            self.ui.show_wave_banner(self.wave_mgr.wave, self.wave_mgr.is_boss_wave)
+            self.ui.show_wave_banner(self.wave_mgr.wave, self.wave_mgr.is_boss_wave,
+                                     BOSS_NAMES[boss_kind(self.wave_mgr.wave)])
             if self.wave_mgr.is_boss_wave:
                 self.audio.boss_spawn()
             else:
                 self.audio.wave_start()
         if self.wave_mgr.wave_just_cleared and not self.dying:
-            choices = roll_choices(self.perks)
+            prng = (random.Random(f"{self.seed}:perk:{self.wave_mgr.wave}")
+                    if self.seed is not None else None)
+            choices = roll_choices(self.perks, rng=prng)
             if choices:
                 self.perk_choices = choices
                 self.perk_pending = True
+
+    def _update_bullets(self, dt: float) -> None:
+        """Move enemy bullets and resolve hits on the player.
+        Dash i-frames dodge them, Chaos Mode erases them, otherwise 1 damage."""
+        p = self.player
+        for b in self.enemy_bullets:
+            b.update(dt)
+            if not b.alive:
+                continue
+            if b.pos.distance_to(p.pos) < p.radius + b.radius - 2:
+                if p.chaos_mode:
+                    b.alive = False
+                    self.dust.emit(b.pos.x, b.pos.y, 10, b.color, speed=(60.0, 220.0))
+                elif not p.invulnerable and not self.dying:
+                    b.alive = False
+                    self._hurt_player(b.pos, 10, 14, 40)
+        self.enemy_bullets = [b for b in self.enemy_bullets if b.alive]
+
+    def _clear_bullets(self) -> None:
+        for b in self.enemy_bullets:
+            self.dust.emit(b.pos.x, b.pos.y, 4, b.color, speed=(30.0, 140.0))
+        self.enemy_bullets.clear()
+
+    def _shake_offset(self, t: float) -> tuple:
+        """Screen-shake offset at time *t* (s): smooth layered sines, |offset| <= shake.
+        (Was a fresh random jump every frame, which reads as jitter, not impact.)"""
+        sh = self.shake
+        if sh < 1:
+            return 0, 0
+        return (int(sh * (0.7 * math.sin(t * 47.0) + 0.3 * math.sin(t * 91.3 + 1.7))),
+                int(sh * (0.7 * math.sin(t * 53.0 + 2.1) + 0.3 * math.sin(t * 83.7 + 0.4))))
+
+    def _freeze(self, seconds: float) -> None:
+        """Hit-stop: briefly freeze the simulation on impactful moments."""
+        if not self.stress_target:
+            self._hitstop_t = min(0.3, max(self._hitstop_t, seconds))
+
+    def _stress_tick(self) -> None:
+        """--stress N: keep ~N enemies alive, make the player unkillable."""
+        self.hp = max(self.hp, 3)
+        self.perk_pending = False
+        kinds = ("standard", "hunter", "swarm", "phantom", "splitter", "berserker")
+        for _ in range(min(self.stress_target - len(self.enemies), 40)):
+            self._spawn_entity(random.choice(kinds))
 
     def _beam_hits(self, ent, cx: float, cy: float) -> bool:
         """Perpendicular-distance test against the beam ray (500px long)."""
@@ -369,6 +492,8 @@ class Game:
         cx, cy = int(proj.pos.x), int(proj.pos.y)
         self._burst(cx, cy, proj.color, 28, (2, 9))
         self._ring(cx, cy, proj.color, 10, BOMB_RADIUS, 0.5)
+        self.dust.emit(cx, cy, 500, proj.color, speed=(80.0, 520.0), life=(0.4, 1.1))
+        self._freeze(0.06)
         self.audio.bomb_explode()
         self.shake = 14
         for e in self.enemies[:]:
@@ -396,7 +521,8 @@ class Game:
         if new > old:
             self._text_popup(self.player.pos.x, self.player.pos.y - 34,
                              f"STREAK x{new:g}", CHAOS_COL)
-            self.audio.level_up()
+            self.audio.play("streak_up")
+            self._freeze(0.05)
         return new
 
     def _text_popup(self, x: float, y: float, text: str, color: tuple) -> None:
@@ -409,14 +535,15 @@ class Game:
         """Shield Drones orbit a host enemy and make it immune while they live."""
         for e in self.enemies:
             e.shield = 0
+        hosts = None
         for d in self.enemies:
             if not isinstance(d, ShieldDrone):
                 continue
-            if d.host is None or d.host not in self.enemies:
+            if d.host is None or d.host._dead:
+                if hosts is None:
+                    hosts = [h for h in self.enemies if not isinstance(h, ShieldDrone)]
                 best, best_d = None, 1e9
-                for h in self.enemies:
-                    if isinstance(h, ShieldDrone):
-                        continue
+                for h in hosts:
                     dist = h.pos.distance_to(d.pos)
                     if dist < best_d:
                         best, best_d = h, dist
@@ -432,18 +559,22 @@ class Game:
                 x, y = int(e.pos.x), int(e.pos.y)
                 self._ring(x, y, BERSERKER_RAGE_COL, 10, 100, 0.45)
                 self._burst(x, y, BERSERKER_RAGE_COL, 18, (2, 8))
-                self.audio.boss_hit()
+                self.audio.play("enrage")
+                self._freeze(0.08)
                 self.shake = max(self.shake, 7)
             elif isinstance(e, Teleporter) and e.blink_event:
                 e.blink_event = False
                 self._ring(int(e.blink_from.x), int(e.blink_from.y), TELEPORTER_COL, 14, 40, 0.25)
                 self._ring(int(e.pos.x), int(e.pos.y), TELEPORTER_COL, 6, 46, 0.3)
-                self.audio.dash()
+                self.audio.play("teleport")
 
     def _on_enemy_killed(self, e) -> None:
         if e not in self.enemies:          # already dead (beam + chain on same frame, etc.)
             return
         self.enemies.remove(e)
+        e._dead = True
+        if isinstance(e, ShieldDrone):
+            self.audio.play("shield_break")
         ex, ey = int(e.pos.x), int(e.pos.y)
         mult = self._register_kill()
         pts  = int(round(e.score_val * mult))
@@ -488,6 +619,8 @@ class Game:
         self._score_popup(bx, by, pts, (0, 220, 255))
         self.audio.level_up()
         self.shake = 20
+        self._freeze(0.3)
+        self._clear_bullets()
         self.boss  = None
 
     # ── Perks ─────────────────────────────────────────────────────────────────
@@ -515,6 +648,7 @@ class Game:
         self.shake      = shake
         self.streak     = 0                           # getting hit breaks the streak
         self.audio.player_hit()
+        self._freeze(0.07)
         self._burst(int(p.pos.x), int(p.pos.y), ENEMY_COL, burst_n)
         self.renderer.trigger_flash((210, 45, 75))
         push = p.pos - src_pos
@@ -538,7 +672,9 @@ class Game:
             self._ring(int(p.pos.x), int(p.pos.y), WHITE, 10, 260, 0.7)
             self._burst(int(p.pos.x), int(p.pos.y), WHITE, 30, (3, 10))
             self._text_popup(p.pos.x, p.pos.y - 40, "SECOND WIND", WHITE)
+            self._clear_bullets()
             self.renderer.trigger_flash((255, 255, 255), 0.2)
+            self._freeze(0.2)
             self.audio.chaos_activate()
             return
         self.dying        = True                       # slow-motion, then game over
@@ -620,10 +756,7 @@ class Game:
             surf = pygame.display.get_surface()
 
         ox, oy = 0, 0
-        sh = int(self.shake)
-        if sh:
-            ox = random.randint(-sh, sh)
-            oy = random.randint(-sh, sh)
+        ox, oy = self._shake_offset(pygame.time.get_ticks() / 1000.0)
 
         self.renderer.draw_background(surf, self.player.chaos_mode)
         self.renderer.draw_glitch_lines(surf)
@@ -632,16 +765,20 @@ class Game:
         world.fill((0, 0, 0, 0))
         for b    in self.meh_blocks:  b.draw(world, self.ui.font_s)
         for f    in self.fragments:   f.draw(world)
+        _helpers.LOD = len(self.enemies) > _LOD_ENEMIES      # crowd level-of-detail
         for e    in self.enemies:
             e.draw(world)
             if e.shield > 0:
                 fade_ring(world, SHIELD_COL, e.pos, e.radius + 9, 150)
+        _helpers.LOD = False
         for pt   in self.particles:   pt.draw(world)
         for proj in self.projectiles: proj.draw(world)
+        for b    in self.enemy_bullets: b.draw(world)
         if self.boss:
             self.boss.draw(world)
         self.player.draw(world)
         surf.blit(world, (ox, oy))
+        self.dust.draw(surf, ox, oy)
 
         if self.player.chaos_mode:
             self.renderer.draw_chromatic(surf)
@@ -671,7 +808,24 @@ class Game:
         self.ui.draw_crosshair(surf, (mx, my),
                                WEAPON_COLORS[self.player.weapon_index])
 
+        if self.daily:
+            tag = self.ui.font_s.render(f"DAILY RUN  {self.daily_date or ''}", True, (255, 190, 0))
+            surf.blit(tag, (W // 2 - tag.get_width() // 2, 2))
+        if self.show_debug or self.stress_target:
+            self._draw_debug(surf)
+
         # Game-over overlay is handled by GameOverState;
         # only show it if we're NOT using the state manager
         if self.game_over and self.manager is None:
             self.ui.draw_game_over(surf, self.score)
+
+    def _draw_debug(self, surf: pygame.Surface) -> None:
+        lines = list(self.debug_info) + [
+            f"enemies {len(self.enemies):4d}   projectiles {len(self.projectiles):3d}   bullets {len(self.enemy_bullets):3d}",
+            f"particles {len(self.particles):3d}   dust {len(self.dust):5d}"
+            + ("   [LOD]" if len(self.enemies) > _LOD_ENEMIES else ""),
+        ]
+        y = 110
+        for ln in lines:
+            surf.blit(self.ui.font_s.render(ln, True, (0, 255, 160)), (W - 330, y))
+            y += 14

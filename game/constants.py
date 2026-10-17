@@ -219,3 +219,16 @@ BERSERKER_RAGE_COL = (255, 20, 20)
 TELEPORTER_COL  = (80, 255, 200)
 SHIELD_COL      = (100, 200, 255)
 SPLITTER_COL    = (200, 150, 255)
+
+# ── The Prism (second boss) & enemy bullets ──────────────────────────────────
+# Post-processing
+VIGNETTE_DARKEN       = 0.55     # how dark the extreme corners get (0 = off, 1 = black)
+SCANLINE_DARKEN      = 14       # 0-255, every 3rd row
+
+PRISM_HP             = 24
+PRISM_RADIUS         = 30
+PRISM_SCORE          = 800
+PRISM_COL            = (255,  80, 220)
+ENEMY_BULLET_RADIUS  = 6
+ENEMY_BULLET_COL     = (255, 110, 190)
+MAX_ENEMY_BULLETS    = 600
