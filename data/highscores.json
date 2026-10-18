@@ -1,6 +1,12 @@
 {
   "scores": [
     {
+      "name": "6464'",
+      "score": 734,
+      "wave": 2,
+      "time": 54
+    },
+    {
       "name": "odhso",
       "score": 620,
       "wave": 2,
@@ -25,6 +31,12 @@
       "time": 28
     },
     {
+      "name": "ml",
+      "score": 340,
+      "wave": 2,
+      "time": 35
+    },
+    {
       "name": "62",
       "score": 150,
       "wave": 1,
@@ -38,7 +50,13 @@
     }
   ],
   "settings": {
-    "volume": 0.2,
+    "volume": 1.0,
     "muted": false
+  },
+  "daily": {
+    "20261015": {
+      "score": 340,
+      "wave": 2
+    }
   }
 }

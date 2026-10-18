@@ -232,3 +232,32 @@ Open-Source Developer · AI Safety Researcher · BCSIT @ Pokhara University
 ## License
 
 MIT. Fork it, break it, ship something weirder.
+
+
+## Enemies
+Standard, Hunter, Swarm Node, Phantom, **Berserker** (enrages below 50% HP), **Teleporter** (only vulnerable after a blink or while stunned), **Shield Drone** (makes another enemy immune), **Splitter** (splits into two Swarm Nodes), and the boss **The Architect** every 5th wave.
+
+## Perks
+Clear a wave and pick 1 of 3 upgrades (keys 1/2/3 or click): Overclock, Pierce, Arc Lattice, Phase Drive, Surge, Salvage, Volatile Core, Repair, Second Wind.
+
+## Kill streaks
+Chain kills within 4 seconds for score multipliers up to x3. Getting hit resets the streak.
+
+## Tests
+`python -m unittest discover -s tests`
+
+
+## Bosses
+**The Architect** (wave 5, 15, 25 …) mirrors you and spawns minions. **The Prism** (wave 10, 20, 30 …) is a bullet-hell boss with telegraphed attacks — dash through bullets, hack to clear them, or erase them in Chaos Mode.
+
+## Daily Run
+Main menu → DAILY RUN. Same seed for everyone on the same UTC day (arena, spawn positions, perk offers). The game-over screen prints a checksummed share code to send to friends (press C to copy). No server, so no global leaderboard.
+
+## Command-line options
+| Flag | What it does |
+|---|---|
+| `--stress N` | Keep ~N enemies alive and make you unkillable (engine stress test) |
+| `--gpu` | Experimental: SDL2 GPU scaling/presentation (falls back if unsupported) |
+
+In-game: **F3** debug overlay, **F11** fullscreen, **M** mute.
+Benchmark headless: `python tools/stress_bench.py 100 500 1000`

@@ -13,7 +13,7 @@ from game.constants import (
     BOSS_COL, BOSS_HP,
     CONTROLS_FADE_TIME,
 )
-from utils.helpers import alpha_rect, draw_panel, lerp_color
+from utils.helpers import alpha_rect, draw_panel, lerp_color, fade_circle
 
 
 class UI:
@@ -59,9 +59,7 @@ class UI:
         for i in range(max(0, hp)):
             cx = W - 28 - i * 26
             cy = 24
-            glow_s = pygame.Surface((30, 30), pygame.SRCALPHA)
-            pygame.draw.circle(glow_s, (*ENEMY_COL, 40), (15, 15), 12)
-            surf.blit(glow_s, (cx - 15, cy - 15))
+            fade_circle(surf, ENEMY_COL, (cx, cy), 12, 40)      # cached sprite
             pygame.draw.circle(surf, ENEMY_COL, (cx, cy), 8)
             pygame.draw.circle(surf, WHITE,     (cx, cy), 8, 1)
 
@@ -73,6 +71,30 @@ class UI:
         surf.blit(self.font_s.render(f"t+{t // 60:02d}:{t % 60:02d}", True, DIM), (20, 32))
         surf.blit(self.font_s.render(f"WAVE   {wave}", True, ACCENT), (100, 32))
 
+    def draw_streak(self, surf: pygame.Surface, streak: int, mult: float,
+                    frac: float) -> None:
+        """Kill-streak counter + decay bar under the score panel."""
+        if streak < 2:
+            return
+        hot = mult >= 3.0
+        col = CHAOS_COL if mult > 1.0 else ACCENT
+        draw_panel(surf, (14, 70, 200, 34), alpha=150,
+                   border_color=col if mult > 1.0 else (50, 50, 90))
+        label = f"STREAK {streak}"
+        surf.blit(self.font_s.render(label, True, WHITE), (22, 75))
+        mtxt = self.font_m.render(f"x{mult:g}", True, col)
+        surf.blit(mtxt, (206 - mtxt.get_width(), 74 if not hot else 73 + int(math.sin(pygame.time.get_ticks() * 0.02) * 1.5)))
+        pygame.draw.rect(surf, (18, 18, 38), (22, 94, 184, 4), border_radius=2)
+        pygame.draw.rect(surf, col, (22, 94, int(184 * max(0.0, min(1.0, frac))), 4), border_radius=2)
+
+    def draw_perks(self, surf: pygame.Surface, perks: list) -> None:
+        """Owned perks, right-aligned under the HP pips: [(name, stacks, color), ...]."""
+        y = 46
+        for name, stacks, col in perks:
+            txt = self.font_s.render(f"{name} x{stacks}" if stacks > 1 else name, True, col)
+            surf.blit(txt, (W - 16 - txt.get_width(), y))
+            y += 14
+
     def _draw_hack_prompt(self, surf: pygame.Surface, player) -> None:
         if player.hack_cd > 0:
             txt = f"[SPACE] hack: {player.hack_cd:.1f}s"
@@ -80,18 +102,18 @@ class UI:
         else:
             txt = "[SPACE] hack: READY"
             col = (80, 220, 100)
-        surf.blit(self.font_s.render(txt, True, col), (20, H - 58))
+        surf.blit(self.font_s.render(txt, True, col), (20, H - 82))
 
         # Dash indicator
         pips = "".join("[#]" if i < player.dash_charges else "[ ]"
-                       for i in range(2))
+                       for i in range(player.max_dash_charges))
         if player.dash_charges <= 0:
             dtxt = f"[SHIFT] dash: {pips}  {max(0.0, player._dash_recharge):.1f}s"
             dcol = (80, 80, 160)
         else:
             dtxt = f"[SHIFT] dash: {pips}"
             dcol = (120, 120, 255)
-        surf.blit(self.font_s.render(dtxt, True, dcol), (20, H - 70))
+        surf.blit(self.font_s.render(dtxt, True, dcol), (20, H - 96))
 
     def _draw_weapon_bar(self, surf: pygame.Surface, player) -> None:
         bw, bh = 44, 44
@@ -161,11 +183,12 @@ class UI:
         bx = W // 2 - bw // 2
         by = H - 90
         draw_panel(surf, (bx - 10, by - 20, bw + 20, bh + 30), alpha=200)
-        surf.blit(self.font_s.render("THE ARCHITECT", True, BOSS_COL), (bx, by - 16))
+        bcol = getattr(boss, "bar_color", BOSS_COL)
+        surf.blit(self.font_s.render(getattr(boss, "name", "BOSS"), True, bcol), (bx, by - 16))
         fill = int(bw * max(0, boss.hp / boss.max_hp))
         pygame.draw.rect(surf, (20, 20, 40), (bx, by, bw, bh), border_radius=6)
         if fill:
-            col = (255, 80, 80) if boss.is_phase2 else BOSS_COL
+            col = (255, 80, 80) if boss.is_phase2 else bcol
             pygame.draw.rect(surf, col, (bx, by, fill, bh), border_radius=6)
             pygame.draw.rect(surf, (*WHITE, 30), (bx, by, fill, bh // 2), border_radius=6)
         pygame.draw.rect(surf, (80, 80, 130), (bx, by, bw, bh), 1, border_radius=6)
@@ -188,9 +211,10 @@ class UI:
 
     # ── Wave banner ───────────────────────────────────────────────────────────
 
-    def show_wave_banner(self, wave: int, is_boss: bool = False) -> None:
+    def show_wave_banner(self, wave: int, is_boss: bool = False,
+                         boss_name: str = "THE ARCHITECT") -> None:
         if is_boss:
-            self._wave_banner_text = "// THE ARCHITECT INCOMING //"
+            self._wave_banner_text = f"// {boss_name} INCOMING //"
         else:
             self._wave_banner_text = f"// WAVE {wave} //"
         self._wave_banner_timer = 3.0
