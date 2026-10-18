@@ -64,6 +64,27 @@ def qualifies_for_leaderboard(score: int) -> bool:
     return score > scores[-1]["score"]
 
 
+# ── Daily run ─────────────────────────────────────────────────────────────────
+
+def record_daily(date: str, score: int, wave: int) -> dict:
+    """Keep the best score per date (last 30 dates).  Returns that date's best."""
+    data  = _ensure()
+    daily = data.get("daily", {})
+    best  = daily.get(date)
+    if best is None or score > best["score"]:
+        best = {"score": int(score), "wave": int(wave)}
+        daily[date] = best
+    for old in sorted(daily)[:-30]:
+        del daily[old]
+    data["daily"] = daily
+    _write(data)
+    return best
+
+
+def load_daily(date: str):
+    return _ensure().get("daily", {}).get(date)
+
+
 # ── Settings ──────────────────────────────────────────────────────────────────
 
 def load_settings() -> dict:

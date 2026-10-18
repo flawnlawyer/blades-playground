@@ -152,18 +152,23 @@ class DeathSlowMoTests(unittest.TestCase):
         self.assertTrue(g.game_over)
 
     def test_world_runs_slowly_while_dying(self):
-        g = fresh_game(); g.hp = 1
-        h = Enemy(100, 360); h.speed = 2.0; g.enemies.append(h)
-        g.player.pos.update(1200, 360)
-        g._hurt_player(PLAYER_AT + pygame.Vector2(30, 0), 12, 18, 70)   # -> dying
-        x0 = h.pos.x
-        g.player.pos.update(1200, 360)
-        for _ in range(10): g.update(1 / 60)
-        slow = h.pos.x - x0
-        g2 = fresh_game(); h2 = Enemy(100, 360); h2.speed = 2.0; g2.enemies.append(h2)
-        g2.player.pos.update(1200, 360); x1 = h2.pos.x
-        for _ in range(10): g2.update(1 / 60)
-        self.assertLess(slow, (h2.pos.x - x1) * 0.4)
+        """Enemy sits inside chase range (deterministic pursuit, not random wander)."""
+        def travel(dying: bool) -> float:
+            g = fresh_game(); g.hp = 1
+            h = Enemy(500, 360); h.speed = 2.0; g.enemies.append(h)
+            g.player.pos.update(700, 360)
+            if dying:
+                g._hurt_player(pygame.Vector2(700, 340), 12, 18, 70)   # lethal -> slow-mo
+                assert g.dying
+            g.player.pos.update(700, 360)
+            x0 = h.pos.x
+            for _ in range(10):
+                g.update(1 / 60)
+                g.player.pos.update(700, 360)
+            return h.pos.x - x0
+        normal, slow = travel(False), travel(True)
+        self.assertGreater(normal, 5)
+        self.assertLess(slow, normal * 0.45)
 
     def test_no_extra_damage_while_dying(self):
         g = fresh_game(); g.hp = 1

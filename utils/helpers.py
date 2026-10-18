@@ -77,9 +77,16 @@ def fade_ring(surf: pygame.Surface, color: tuple, center: tuple,
 
 # ── Public drawing helpers (API unchanged) ────────────────────────────────────
 
+# Level-of-detail switch.  Game sets this True while drawing a huge crowd of
+# enemies; glows and HP bars are skipped (they're invisible at that density
+# and are the dominant per-enemy draw cost).
+LOD = False
+
 def glow_circle(surf: pygame.Surface, color: tuple, pos: tuple,
                 radius: int, alpha: int = 50) -> None:
     """Draw a soft radial glow centred at pos."""
+    if LOD:
+        return
     r2 = int(radius) * 2
     if r2 <= 0:
         return
