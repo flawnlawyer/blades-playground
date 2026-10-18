@@ -13,9 +13,10 @@ from game.state_manager import BaseState
 
 
 class PlayState(BaseState):
-    def __init__(self, manager) -> None:
+    def __init__(self, manager, daily: bool = False) -> None:
         super().__init__(manager)
         self._game = None
+        self.daily = daily
 
     # ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -23,7 +24,13 @@ class PlayState(BaseState):
         # Always create a fresh game on enter (handles restart)
         if self._game is None:
             from game.game import Game
-            self._game = Game(self.manager)
+            from utils import daily as _daily
+            seed = _daily.seed_for(_daily.today()) if self.daily else None
+            self._game = Game(self.manager, seed=seed)
+            if self.daily:
+                self._game.daily_date = _daily.today()
+            self._game.stress_target = getattr(self.manager, "stress", 0)
+        self._game.music.start()                    # idempotent; keeps playing through pause / perk screens
         # Re-start drone in case we're returning from pause
         if self._game.audio and not self._game.audio.muted:
             self._game.audio.update_drone(
@@ -35,6 +42,7 @@ class PlayState(BaseState):
         # Always stop the ambient drone so it doesn't bleed into menus
         if self._game and self._game.audio:
             self._game.audio.stop_drone()
+            self._game.music.stop()
         pygame.mouse.set_visible(True)
 
     # ── Events ────────────────────────────────────────────────────────────────
@@ -62,6 +70,9 @@ class PlayState(BaseState):
                 if event.key == pygame.K_m:
                     game.audio.toggle_mute()
 
+                if event.key == pygame.K_F3:
+                    game.show_debug = not game.show_debug
+
                 if event.key in (pygame.K_LSHIFT, pygame.K_RSHIFT):
                     if not game.game_over:
                         if game.player.trigger_dash(pygame.key.get_pressed()):
@@ -76,6 +87,8 @@ class PlayState(BaseState):
         # Translate real mouse → logical coordinates
         # Use setattr to avoid strict type-checking on Game._logical_mouse
         setattr(self._game, "_logical_mouse", self.manager.mouse_to_logical())
+        clk = self.manager.clock
+        self._game.debug_info = [f"FPS {clk.get_fps():5.1f}   frame {clk.get_time():3d} ms"]
         if not self._game.game_over:
             self._game.update(dt)
 

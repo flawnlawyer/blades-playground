@@ -11,6 +11,7 @@ import pygame
 from game.state_manager import BaseState
 from game.constants import LOGICAL_W as W, LOGICAL_H as H, WHITE, DIM
 from utils.helpers import draw_panel, alpha_rect
+from game.perk_icons import draw_perk_icon
 
 _CARD_W, _CARD_H, _GAP = 300, 250, 28
 _INPUT_LOCK = 0.4          # seconds
@@ -49,6 +50,7 @@ class PerkState(BaseState):
     def _pick(self, index: int) -> None:
         if not (0 <= index < len(self._choices)):
             return
+        self._game.audio.play("perk_select")
         self._game.grant_perk(self._choices[index].key)
         pygame.mouse.set_visible(False)
         self.manager.pop()
@@ -113,8 +115,7 @@ class PerkState(BaseState):
             if perk.max_stacks > 1:
                 stacks = self._f_small.render(f"{owned}/{perk.max_stacks}", True, col if owned else DIM)
                 surf.blit(stacks, (r.right - 14 - stacks.get_width(), r.y + 12))
-            pygame.draw.circle(surf, col, (r.centerx, r.y + 78), 22, 2)
-            pygame.draw.circle(surf, col, (r.centerx, r.y + 78), 8)
+            draw_perk_icon(surf, perk.key, r.centerx, r.y + 78, col, 24)
             name = self._f_name.render(perk.name, True, WHITE if sel else col)
             surf.blit(name, (r.centerx - name.get_width() // 2, r.y + 124))
             self._wrapped(surf, perk.desc, r.x + 20, r.y + 160, r.w - 40, DIM if not sel else WHITE)
