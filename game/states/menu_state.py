@@ -18,7 +18,7 @@ from game.constants import (
 from utils.helpers import draw_panel
 
 
-_MENU_ITEMS = ["PLAY", "HIGH SCORES", "SETTINGS", "QUIT"]
+_MENU_ITEMS = ["PLAY", "DAILY RUN", "HIGH SCORES", "SETTINGS", "QUIT"]
 
 # Pre-baked vignette shared across re-entries
 _vignette_cache: pygame.Surface | None = None
@@ -106,6 +106,9 @@ class MenuState(BaseState):
         if item == "PLAY":
             from game.states.play_state import PlayState
             self.manager.switch(PlayState(self.manager))
+        elif item == "DAILY RUN":
+            from game.states.play_state import PlayState
+            self.manager.switch(PlayState(self.manager, daily=True))
         elif item == "HIGH SCORES":
             from game.states.highscores_state import HighScoresState
             self.manager.push(HighScoresState(self.manager))

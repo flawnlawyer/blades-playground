@@ -80,7 +80,8 @@ class PauseState(BaseState):
         elif item == "RESTART":
             pygame.mouse.set_visible(False)
             from game.states.play_state import PlayState
-            self.manager.replace_all(PlayState(self.manager))
+            self.manager.replace_all(PlayState(
+                self.manager, daily=bool(self._game and self._game.daily)))
         elif item == "MAIN MENU":
             from game.states.menu_state import MenuState
             self.manager.replace_all(MenuState(self.manager))
