@@ -10,11 +10,13 @@ Performance notes
 """
 from __future__ import annotations
 import random
+import numpy as np
 import pygame
 
 from game.constants import (
     W, H, TILE,
     BG, GRID_DIM, GRID_BRIGHT, CHAOS_COL,
+    VIGNETTE_DARKEN, SCANLINE_DARKEN,
 )
 from utils.helpers import fade_circle
 
@@ -57,26 +59,22 @@ class Renderer:
 
     @staticmethod
     def _make_overlay() -> pygame.Surface:
-        """Vignette + CRT scanlines composited into a single surface."""
-        s = pygame.Surface((W, H), pygame.SRCALPHA)
-        cx, cy = W // 2, H // 2
-        for r in range(max(W, H), 0, -4):
-            t = r / max(W, H)
-            a = int(max(0, (1.0 - t * 1.6)) * 110)
-            if a <= 0:
-                continue
-            pygame.draw.ellipse(s, (0, 0, 0, a),
-                                (cx - r, cy - int(r * 0.6),
-                                 r * 2, int(r * 1.2)), 3)
-        scan = pygame.Surface((W, H), pygame.SRCALPHA)
-        for y in range(0, H, 3):
-            pygame.draw.line(scan, (0, 0, 0, 14), (0, y), (W, y))
-        s.blit(scan, (0, 0))
-        # Black-at-alpha-a == multiply by (255-a)/255.  Flatten onto white to get
-        # an opaque multiply-map; BLEND_RGB_MULT blits ~3.5x faster than per-pixel alpha.
-        mul = pygame.Surface((W, H))
-        mul.fill((255, 255, 255))
-        mul.blit(s, (0, 0))
+        """Vignette + CRT scanlines baked into ONE opaque multiply-map.
+
+        Smooth radial gradient computed with NumPy: clear in the middle, darker
+        toward the corners (quadratic falloff, so the centre ~35% is untouched).
+        Blitting it with BLEND_RGB_MULT is ~3.5x cheaper than per-pixel alpha.
+        (The original vignette was inverted — it dimmed the centre — and stepped
+        in 4px rings, which produced visible banding.)
+        """
+        y, x = np.ogrid[0:H, 0:W]
+        d    = np.hypot((x - W / 2) / (W / 2), (y - H / 2) / (H / 2)) / np.sqrt(2.0)
+        dark = np.clip((d - 0.35) / 0.65, 0.0, 1.0) ** 2 * VIGNETTE_DARKEN      # (H, W)
+        mult = 255.0 * (1.0 - dark)
+        mult[0::3, :] *= (255 - SCANLINE_DARKEN) / 255.0                         # scanlines
+        gray = np.clip(mult, 0, 255).astype(np.uint8).T                          # -> (W, H)
+        mul  = pygame.Surface((W, H))
+        pygame.surfarray.blit_array(mul, np.dstack([gray, gray, gray]))
         return mul.convert() if pygame.display.get_surface() is not None else mul
 
     # ── Per-frame update ──────────────────────────────────────────────────────

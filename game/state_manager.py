@@ -79,8 +79,9 @@ class FadeTransition:
 # ── StateManager ──────────────────────────────────────────────────────────────
 
 class StateManager:
-    def __init__(self, screen: pygame.Surface) -> None:
+    def __init__(self, screen: pygame.Surface | None, presenter=None) -> None:
         self.screen     = screen
+        self.presenter  = presenter      # GpuPresenter (optional); screen is None then
         self.clock      = pygame.time.Clock()
         self._stack: list[BaseState] = []
         self.transition = FadeTransition(0.30)
@@ -92,7 +93,7 @@ class StateManager:
 
         # Fullscreen state
         self._fullscreen   = False
-        self._windowed_size = (screen.get_width(), screen.get_height())
+        self._windowed_size = self._screen_size()
 
         # Shared resources
         self.logo: pygame.Surface | None = None
@@ -103,9 +104,12 @@ class StateManager:
 
     # ── Scaling helpers ───────────────────────────────────────────────────────
 
+    def _screen_size(self) -> tuple:
+        return self.presenter.size if self.presenter else self.screen.get_size()
+
     def _update_scaling(self) -> None:
         """Recalculate the scale factor and letterbox offsets."""
-        sw, sh = self.screen.get_size()
+        sw, sh = self._screen_size()
         scale_x = sw / LOGICAL_W
         scale_y = sh / LOGICAL_H
         self._scale = min(scale_x, scale_y)
@@ -129,6 +133,10 @@ class StateManager:
 
     def scale_and_blit(self) -> None:
         """Scale the logical surface to the real screen with letterboxing."""
+        if self.presenter:                                   # GPU path
+            self.presenter.present(self.logical_surface, pygame.Rect(
+                self._offset_x, self._offset_y, *self._scaled_size))
+            return
         self.screen.fill((0, 0, 0))
         if self._scaled_size == (LOGICAL_W, LOGICAL_H):
             self.screen.blit(self.logical_surface, (self._offset_x, self._offset_y))
@@ -140,6 +148,11 @@ class StateManager:
     # ── Fullscreen toggle ─────────────────────────────────────────────────────
 
     def toggle_fullscreen(self) -> None:
+        if self.presenter:
+            self.presenter.toggle_fullscreen()
+            self._fullscreen = not self._fullscreen
+            self._update_scaling()
+            return
         if self._fullscreen:
             # Restore windowed
             self.screen = pygame.display.set_mode(
@@ -207,6 +220,8 @@ class StateManager:
             dt = min(self.clock.tick(FPS) / 1000.0, 0.05)
 
             events = pygame.event.get()
+            if self.presenter:                       # window size can change without a VIDEORESIZE
+                self._update_scaling()
             for ev in events:
                 if ev.type == pygame.QUIT:
                     self._quitting = True
@@ -236,4 +251,5 @@ class StateManager:
 
             # Scale to real screen
             self.scale_and_blit()
-            pygame.display.flip()
+            if not self.presenter:
+                pygame.display.flip()
