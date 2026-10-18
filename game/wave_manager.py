@@ -22,6 +22,14 @@ WAVE_DEFS = [
 ]
 
 
+BOSS_NAMES = {"architect": "THE ARCHITECT", "prism": "THE PRISM"}
+
+
+def boss_kind(wave: int) -> str:
+    """Wave 5 = Architect, 10 = Prism, 15 = Architect (tier 2), 20 = Prism ..."""
+    return "architect" if ((wave - 5) // 5) % 2 == 0 else "prism"
+
+
 class WaveManager:
     def __init__(self) -> None:
         self.wave         = 0       # current wave number (1-indexed for display)

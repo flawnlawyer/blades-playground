@@ -12,7 +12,8 @@ from game.constants import (
     WHITE, DIM, ENEMY_COL, ACCENT,
 )
 from utils.helpers import draw_panel
-from utils.data_manager import save_score, qualifies_for_leaderboard
+from utils.data_manager import save_score, qualifies_for_leaderboard, record_daily
+from utils import daily as _daily
 
 
 _GO_ITEMS = ["PLAY AGAIN", "MAIN MENU"]
@@ -35,6 +36,8 @@ class GameOverState(BaseState):
         self._entering     = False
         self._name_input   = ""
         self._saved        = False
+        self._daily_info   = []
+        self._code         = ""
 
         # Fonts
         self._font_title   = None
@@ -59,6 +62,12 @@ class GameOverState(BaseState):
         if self._game:
             self._snapshot = pygame.Surface((W, H))
             self._game.draw(self._snapshot)
+            if self._game.daily:
+                date = self._game.daily_date or _daily.today()
+                best = record_daily(date, self._final_score, self._final_wave)
+                self._code = _daily.share_code(date, self._final_score, self._final_wave)
+                self._daily_info = [f"DAILY RUN {date}   BEST TODAY: {best['score']}",
+                                    f"SHARE CODE: {self._code}   (C = copy)"]
 
     def handle_events(self, events: list) -> None:
         for ev in events:
@@ -83,6 +92,11 @@ class GameOverState(BaseState):
                         self._selected = (self._selected + 1) % len(_GO_ITEMS)
                     elif ev.key in (pygame.K_RETURN, pygame.K_SPACE):
                         self._activate(self._selected)
+                    elif ev.key == pygame.K_c and self._code:
+                        try:
+                            pygame.scrap.init(); pygame.scrap.put_text(self._code)
+                        except Exception:
+                            pass
                     elif ev.key == pygame.K_ESCAPE:
                         from game.states.menu_state import MenuState
                         self.manager.replace_all(MenuState(self.manager))
@@ -105,7 +119,8 @@ class GameOverState(BaseState):
         item = _GO_ITEMS[index]
         if item == "PLAY AGAIN":
             from game.states.play_state import PlayState
-            self.manager.replace_all(PlayState(self.manager))
+            self.manager.replace_all(PlayState(
+                self.manager, daily=bool(self._game and self._game.daily)))
         elif item == "MAIN MENU":
             from game.states.menu_state import MenuState
             self.manager.replace_all(MenuState(self.manager))
@@ -165,13 +180,14 @@ class GameOverState(BaseState):
             f"WAVE REACHED:  {self._final_wave}",
             f"TIME SURVIVED: {t_sec // 60:02d}:{t_sec % 60:02d}",
         ]
+        stats += self._daily_info
         assert self._font_small is not None
         for i, st in enumerate(stats):
             txt = self._font_small.render(st, True, DIM)
             surf.blit(txt, (W // 2 - txt.get_width() // 2, 235 + i * 22))
 
         # High score entry
-        entry_y = 290
+        entry_y = 290 + 22 * len(self._daily_info)
         if self._entering:
             draw_panel(surf, (W//2 - 200, entry_y, 400, 80),
                        bg_color=(12, 8, 18), border_color=(210, 45, 75),
