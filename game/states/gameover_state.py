@@ -54,7 +54,8 @@ class GameOverState(BaseState):
         self._timer        = 0.0
         self._display_score = 0.0
         self._selected     = 0
-        self._qualifies    = qualifies_for_leaderboard(self._final_score)
+        cheated = bool(self._game and self._game.cheated)       # cheated runs are never saved
+        self._qualifies    = qualifies_for_leaderboard(self._final_score) and not cheated
         self._entering     = self._qualifies
         self._name_input   = ""
         self._saved        = False
@@ -62,7 +63,9 @@ class GameOverState(BaseState):
         if self._game:
             self._snapshot = pygame.Surface((W, H))
             self._game.draw(self._snapshot)
-            if self._game.daily:
+            if cheated:
+                self._daily_info = ["CHEATS USED - SCORE NOT SAVED"]
+            elif self._game.daily:
                 date = self._game.daily_date or _daily.today()
                 best = record_daily(date, self._final_score, self._final_wave)
                 self._code = _daily.share_code(date, self._final_score, self._final_wave)

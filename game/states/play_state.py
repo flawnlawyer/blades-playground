@@ -31,6 +31,7 @@ class PlayState(BaseState):
                 self._game.daily_date = _daily.today()
             self._game.stress_target = getattr(self.manager, "stress", 0)
         self._game.music.start()                    # idempotent; keeps playing through pause / perk screens
+        self.manager.active_game = self._game       # lets console commands reach this run
         # Re-start drone in case we're returning from pause
         if self._game.audio and not self._game.audio.muted:
             self._game.audio.update_drone(
@@ -43,6 +44,8 @@ class PlayState(BaseState):
         if self._game and self._game.audio:
             self._game.audio.stop_drone()
             self._game.music.stop()
+        if getattr(self.manager, "active_game", None) is self._game:
+            self.manager.active_game = None
         pygame.mouse.set_visible(True)
 
     # ── Events ────────────────────────────────────────────────────────────────
@@ -89,8 +92,9 @@ class PlayState(BaseState):
         setattr(self._game, "_logical_mouse", self.manager.mouse_to_logical())
         clk = self.manager.clock
         self._game.debug_info = [f"FPS {clk.get_fps():5.1f}   frame {clk.get_time():3d} ms"]
-        if not self._game.game_over:
-            self._game.update(dt)
+        if not self._game.game_over and not self.manager.console.open:     # console pauses the run
+            ts = max(0.1, min(5.0, self._game.time_scale))
+            self._game.update(min(dt * ts, 0.1))
 
         # Wave cleared -> offer a perk (game is frozen while the picker is open)
         if self._game.perk_pending and not self._game.game_over:
