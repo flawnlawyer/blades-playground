@@ -82,6 +82,9 @@ class StateManager:
     def __init__(self, screen: pygame.Surface | None, presenter=None) -> None:
         self.screen     = screen
         self.presenter  = presenter      # GpuPresenter (optional); screen is None then
+        from game.console import Console
+        self.console     = Console(self)  # ` / F10 in-game; same commands from the launching terminal
+        self.active_game = None           # set by PlayState so console commands can reach the run
         self.clock      = pygame.time.Clock()
         self._stack: list[BaseState] = []
         self.transition = FadeTransition(0.30)
@@ -235,6 +238,14 @@ class StateManager:
                 elif ev.type == pygame.KEYDOWN:
                     if ev.key == pygame.K_F11:
                         self.toggle_fullscreen()
+                    elif ev.key in (pygame.K_BACKQUOTE, pygame.K_F10):
+                        self.console.toggle()
+
+            if self.console.open:                    # console swallows all input while open
+                self.console.handle_events([e for e in events if not (
+                    e.type == pygame.KEYDOWN and e.key in (pygame.K_BACKQUOTE, pygame.K_F10))])
+                events = []
+            self.console.update(dt)                  # also drains commands typed in the terminal
 
             if self.current and not self.transition.active:
                 self.current.handle_events(events)
@@ -248,6 +259,7 @@ class StateManager:
             # Draw transition fade on top of logical surface
             self.transition.update(dt)
             self.transition.draw(self.logical_surface)
+            self.console.draw(self.logical_surface)
 
             # Scale to real screen
             self.scale_and_blit()

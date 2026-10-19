@@ -261,3 +261,12 @@ Main menu → DAILY RUN. Same seed for everyone on the same UTC day (arena, spaw
 
 In-game: **F3** debug overlay, **F11** fullscreen, **M** mute.
 Benchmark headless: `python tools/stress_bench.py 100 500 1000`
+
+
+## Console, cheats & terminal control
+Press **`** (or F10) in-game to open a command console — or just type the same commands in the terminal you launched the game from. 43 commands: `god`, `perk all`, `spawn berserker 5`, `boss prism 2`, `wave 15`, `dmg 10`, `timescale 0.3`, `bloom 1.2`, `theme 3`, `set player.speed_mult 1.5` …
+Full list: **[CONSOLE.md](CONSOLE.md)**. Any cheat flags the run — it is never saved to the high-score table or daily board.
+
+| Flag | What it does |
+|---|---|
+| `--terminal` / `--no-terminal` | Force / disable reading commands from stdin (default: on when run from a terminal) |

@@ -11,6 +11,8 @@ Run:
 Options:
     --stress N          Keep ~N enemies alive (engine stress test, F3 = debug overlay)
     --gpu               Experimental: SDL2 GPU scaling/presentation (falls back if unsupported)
+    --terminal          Accept console commands on stdin even when not attached to a TTY
+    --no-terminal       Don't read commands from the terminal
 
 Controls:
     WASD / Arrow keys   Move
@@ -22,6 +24,7 @@ Controls:
     ESC                 Pause / Back
     F11                 Toggle fullscreen
     F3                  Toggle debug overlay
+    ` (backquote) / F10 Open the command console  (type 'help')
 """
 
 import sys
@@ -83,7 +86,11 @@ def main() -> None:
     # Create the state manager
     manager = StateManager(screen, presenter)
     manager.logo = logo_surface
-    setattr(manager, "stress", _arg_int("--stress", 0))
+    manager.stress = _arg_int("--stress", 0)
+    # Terminal control: same commands as the in-game console, typed in the launching terminal
+    if "--no-terminal" not in sys.argv and ("--terminal" in sys.argv or (
+            sys.stdin is not None and sys.stdin.isatty())):
+        manager.console.start_terminal()
 
     # Push the loading state to begin
     manager.push(LoadingState(manager))

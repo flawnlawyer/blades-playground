@@ -36,7 +36,8 @@ class UI:
         self._draw_hack_prompt(surf, player)
         self._draw_weapon_bar(surf, player)
         if wave_mgr and wave_mgr.in_break and wave_mgr.wave > 0:
-            self._draw_wave_break(surf, wave_mgr.break_countdown)
+            self._draw_wave_break(surf, wave_mgr.break_countdown,
+                                  y=30 + (36 if player.chaos_mode else 0))   # stack under the chaos banner
         if player.chaos_mode:
             self._draw_chaos_banner(surf, player)
 
@@ -160,9 +161,9 @@ class UI:
         txt = self.font_l.render(
             f"// CHAOS MODE  {player.chaos_timer:.1f}s", True, CHAOS_COL)
         sx = W // 2 - txt.get_width() // 2
-        surf.blit(txt, (sx, 14))
+        surf.blit(txt, (sx, 30))           # y=30: clear of the small DAILY / CHEATS tags above
 
-    def _draw_wave_break(self, surf: pygame.Surface, countdown: float) -> None:
+    def _draw_wave_break(self, surf: pygame.Surface, countdown: float, y: int = 30) -> None:
         """Pulsing countdown shown between waves."""
         import math
         pulse = 0.5 + 0.5 * math.sin(countdown * 6)
@@ -172,7 +173,7 @@ class UI:
         s = pygame.Surface(txt.get_size(), pygame.SRCALPHA)
         s.blit(txt, (0, 0))
         s.set_alpha(int(180 + 75 * pulse))
-        surf.blit(s, (W // 2 - s.get_width() // 2, 14))
+        surf.blit(s, (W // 2 - s.get_width() // 2, y))
 
     # ── Boss HP bar ───────────────────────────────────────────────────────────
 
