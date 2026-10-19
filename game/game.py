@@ -20,6 +20,7 @@ from game.constants import (
     PRISM_HP, MAX_ENEMY_BULLETS,
     DEATH_SLOW_FACTOR, DEATH_SLOW_DURATION,
     SHIELD_COL, BERSERKER_RAGE_COL, TELEPORTER_COL, SPLITTER_COL,
+    HUNTER_COL, SWARM_COL, PHANTOM_COL, BERSERKER_COL, BOSS_COL,
 )
 from game.player       import Player
 from game.entities     import (MehBlock, Fragment, Enemy, Hunter, SwarmNode, Phantom, Boss,
@@ -40,6 +41,11 @@ from game.wave_manager import WaveManager, boss_kind, BOSS_NAMES
 _PARTICLE_CAP = 200
 _MAX_ENEMY_R   = 32      # broad-phase query padding (largest non-boss enemy radius + margin)
 _LOD_ENEMIES   = 120     # above this many enemies, skip glows / HP bars
+
+
+_ENEMY_COLORS = {Enemy: ENEMY_COL, Hunter: HUNTER_COL, SwarmNode: SWARM_COL,
+                 Phantom: PHANTOM_COL, Berserker: BERSERKER_COL, Teleporter: TELEPORTER_COL,
+                 ShieldDrone: SHIELD_COL, Splitter: SPLITTER_COL}
 
 
 class Game:
@@ -98,6 +104,7 @@ class Game:
             self.fragments.append(Fragment(x, y, pool[i]))
 
     def _spawn_entity(self, etype: str, x: float | None = None, y: float | None = None) -> None:
+        n0 = len(self.enemies)
         if x is None or y is None:
             for _ in range(50):
                 x = float(self._spawn_rng.randint(60, W - 60))
@@ -125,15 +132,13 @@ class Game:
             self.enemies.append(ShieldDrone(x, y))
         elif etype == "splitter":
             self.enemies.append(Splitter(x, y))
+        if len(self.enemies) > n0 and not self.stress_target:     # spawn-in: converging ring + brief grace
+            e = self.enemies[-1]
+            e.spawn_grace = 0.5
+            self._ring(int(e.pos.x), int(e.pos.y), (255, 255, 255), 46, max(6, int(e.radius)), 0.45)
         elif etype == "boss":
             wave = self.wave_mgr.wave
-            tier = max(0, (wave - 5) // 5)
-            if boss_kind(wave) == "prism":
-                self.boss = Prism(W // 2, 130, hp=PRISM_HP + 10 * tier)
-            else:
-                self.boss = Boss(W // 2, 80, hp=BOSS_HP + 8 * tier)
-            self.enemy_bullets.clear()
-            self.audio.boss_spawn()
+            self.spawn_boss(boss_kind(wave), max(0, (wave - 5) // 5))
 
     # ── State ─────────────────────────────────────────────────────────────────
 
@@ -154,6 +159,15 @@ class Game:
         self.enemy_bullets : list           = []
         self._hitstop_t  = 0.0
         self._boss_state_prev = None
+        # Console / cheats
+        self.cheated        = False       # any cheat used => run is never saved
+        self.god            = False
+        self.dmg_mult       = 1.0
+        self.freeze_enemies = False
+        self.time_scale     = 1.0
+        # Boss intro cinematic
+        self._boss_intro    = 0.0
+        self._boss_intro_total = 1.8
         self.boss        : Boss | None      = None
         self.hp          = 3
         self.score       = 0
@@ -240,6 +254,9 @@ class Game:
             self._hitstop_t -= real_dt
             self.renderer.update(real_dt, self.player.chaos_mode)
             return
+        if self._boss_intro > 0:                        # boss intro cinematic: world in slow-mo
+            self._boss_intro -= real_dt
+            dt = real_dt * 0.35
         self.run_time    += dt
         self._last_dt     = real_dt
         keys              = pygame.key.get_pressed()
@@ -258,8 +275,17 @@ class Game:
         self.audio.update_drone(p.energy / p.max_energy, p.chaos_mode)
 
         if p.new_projectiles:
+            if self.dmg_mult != 1.0:
+                for pr in p.new_projectiles:
+                    pr.damage *= self.dmg_mult
             self.projectiles.extend(p.new_projectiles)
             wi = p.weapon_index
+            # muzzle flash: ring + cone of sparks in the weapon's colour
+            mx = p.pos.x + math.cos(p._angle) * 18
+            my = p.pos.y + math.sin(p._angle) * 18
+            self._ring(int(mx), int(my), WEAPON_COLORS[wi], 3, 22, 0.09)
+            self.dust.emit(mx, my, 14, WEAPON_COLORS[wi], speed=(150.0, 420.0),
+                           life=(0.08, 0.2), angle=p._angle, spread=0.35)
             if wi == 0:   self.audio.plasma_shoot()
             elif wi == 1: self.audio.spread_shoot()
             elif wi == 4: self.audio.bomb_launch()
@@ -269,6 +295,8 @@ class Game:
             col = CHAOS_COL if p.chaos_mode else PLAYER_COL
             if len(self.particles) < _PARTICLE_CAP:
                 self.particles.append(DashTrail(p.pos.x, p.pos.y, col, p.radius))
+            self.dust.emit(p.pos.x, p.pos.y, 14, col, speed=(30.0, 200.0), life=(0.15, 0.45),
+                           angle=math.atan2(-p._dash_vel.y, -p._dash_vel.x), spread=0.6)
 
         # Kill-streak decay
         if self.streak > 0:
@@ -328,7 +356,7 @@ class Game:
         if p.chain_targets:
             prev_pos = pygame.Vector2(p.pos)
             for target in p.chain_targets:
-                killed = target.take_damage(CHAIN_DAMAGE)
+                killed = target.take_damage(CHAIN_DAMAGE * self.dmg_mult)
                 mid    = (prev_pos + target.pos) / 2
                 self._burst(int(mid.x), int(mid.y), (100, 255, 180), 5, (2, 6))
                 if killed:
@@ -348,10 +376,15 @@ class Game:
         for b in self.meh_blocks: b.update(dt)
         for f in self.fragments:  f.update(dt)
         self._update_shields()
-        for e in self.enemies:    e.update(dt, p.pos)
+        for e in self.enemies:
+            if e.spawn_grace > 0:
+                e.spawn_grace -= dt
+        if not self.freeze_enemies:
+            for e in self.enemies:
+                e.update(dt, p.pos)
         self._enemy_effects()
 
-        if self.boss:
+        if self.boss and not self.freeze_enemies:
             self.boss.update(dt, p.pos)
             for item in self.boss.spawn_queue:
                 self._spawn_entity(item[0], item[1], item[2])
@@ -375,7 +408,8 @@ class Game:
                 self._freeze(0.14)
                 self.renderer.trigger_flash((255, 60, 60), 0.18)
                 self.audio.boss_spawn()
-        self._update_bullets(dt)
+        if not self.freeze_enemies:
+            self._update_bullets(dt)
 
         self.particles = [pt for pt in self.particles if pt.alive]
         if len(self.particles) > _PARTICLE_CAP:
@@ -398,6 +432,8 @@ class Game:
             return
         # Wave system
         self.wave_mgr.update(dt, len(self.enemies), self.boss is not None)
+        if self.wave_mgr.wave_just_started and self.renderer.theme_auto:
+            self.renderer.set_theme(min(3, self.wave_mgr.wave // 5))
         if self.wave_mgr.wave_just_started and self.seed is not None:
             self._spawn_rng = random.Random(f"{self.seed}:w{self.wave_mgr.wave}")
         for spawn in self.wave_mgr.spawn_queue:
@@ -473,7 +509,7 @@ class Game:
     def _apply_beam(self, dt: float) -> None:
         p   = self.player
         cx, cy = math.cos(p._angle), math.sin(p._angle)
-        dmg = BEAM_DAMAGE_PS * dt          # float damage — no int truncation to 0
+        dmg = BEAM_DAMAGE_PS * dt * self.dmg_mult   # float damage — no int truncation to 0
         sfx = self._beam_sfx_cd <= 0
         if sfx:                            # throttled: was fired every frame
             self.audio.beam_hum()
@@ -498,13 +534,63 @@ class Game:
         self.shake = 14
         for e in self.enemies[:]:
             if e.pos.distance_to(proj.pos) < BOMB_RADIUS:
-                if e.take_damage(BOMB_DAMAGE):
+                if e.take_damage(BOMB_DAMAGE * self.dmg_mult):
                     self._on_enemy_killed(e)
         if self.boss and (self.boss.pos - proj.pos).length() < BOMB_RADIUS:
-            if self.boss.take_damage(BOMB_DAMAGE):
+            if self.boss.take_damage(BOMB_DAMAGE * self.dmg_mult):
                 self._on_boss_killed()
             else:
                 self.audio.boss_hit()
+
+    # ── Boss spawning & intro cinematic ───────────────────────────────────────
+
+    def spawn_boss(self, kind: str = "architect", tier: int = 0) -> None:
+        """Spawn a boss (used by the wave system and the console)."""
+        if kind == "prism":
+            self.boss = Prism(W // 2, 130, hp=PRISM_HP + 10 * tier)
+        else:
+            self.boss = Boss(W // 2, 80, hp=BOSS_HP + 8 * tier)
+        self.enemy_bullets.clear()
+        self.audio.boss_spawn()
+        if not self.stress_target:                      # intro: letterbox, name card, slow-mo
+            self._boss_intro       = self._boss_intro_total
+            self.boss.stunned      = True               # no attacks until the intro ends
+            self.boss.stun_timer   = self._boss_intro_total
+
+    def _draw_boss_intro(self, surf: pygame.Surface) -> None:
+        t, total = self._boss_intro, self._boss_intro_total
+        p   = 1.0 - t / total
+        bar = int(64 * min(1.0, p * 5) * min(1.0, t * 4))      # slide in fast, out over the last 0.25s
+        pygame.draw.rect(surf, (0, 0, 0), (0, 0, W, bar))
+        pygame.draw.rect(surf, (0, 0, 0), (0, H - bar, W, bar))
+        a   = int(255 * min(1.0, p * 4) * min(1.0, t * 3))
+        col = getattr(self.boss, "bar_color", BOSS_COL)
+        name = self.ui.font_xl.render(self.boss.name, True, col)
+        sub  = self.ui.font_m.render(f"// WAVE {self.wave_mgr.wave} //", True, WHITE)
+        for img in (name, sub):
+            img.set_alpha(a)
+        drift = int(10 * (1.0 - min(1.0, p * 2.5)))
+        surf.blit(name, ((W - name.get_width()) // 2, H // 2 - 150 + drift))
+        surf.blit(sub,  ((W - sub.get_width()) // 2,  H // 2 - 104 + drift))
+
+    # ── Console helpers ───────────────────────────────────────────────────────
+
+    def set_wave(self, n: int) -> None:
+        """Jump straight to wave *n* (clears the arena; wave starts after a short beat)."""
+        self.enemies.clear(); self.enemy_bullets.clear(); self.boss = None
+        wm = self.wave_mgr
+        wm.wave = max(0, int(n) - 1)
+        wm._pending_spawns = []; wm.spawn_queue = []; wm._all_dead_timer = 0.0
+        wm._begin_break(); wm._break_timer = 0.3
+
+    def kill_all(self, etype: type | None = None) -> int:
+        n = 0
+        for e in self.enemies[:]:
+            if etype is None or isinstance(e, etype):
+                self._on_enemy_killed(e); n += 1
+        if etype is None and self.boss:
+            self._on_boss_killed(); n += 1
+        return n
 
     # ── Kill streak ───────────────────────────────────────────────────────────
 
@@ -578,7 +664,11 @@ class Game:
         ex, ey = int(e.pos.x), int(e.pos.y)
         mult = self._register_kill()
         pts  = int(round(e.score_val * mult))
-        self._burst(ex, ey, ENEMY_COL, 20, (2, 7))
+        col = _ENEMY_COLORS.get(type(e), ENEMY_COL)
+        self._burst(ex, ey, col, 20, (2, 7))
+        self._ring(ex, ey, col, 6, 46, 0.28)
+        if len(self.particles) < _PARTICLE_CAP:
+            self.particles.append(DashTrail(ex, ey, col, int(e.radius) + 10))   # flash disc
         self._score_popup(ex, ey, pts, ENEMY_COL)
         self.score += pts
         self.shake  = max(self.shake, 6)
@@ -640,7 +730,7 @@ class Game:
     # ── Damage to the player ──────────────────────────────────────────────────
 
     def _hurt_player(self, src_pos, shake: int, burst_n: int, push_dist: float) -> None:
-        if self.dying:
+        if self.dying or self.god:
             return
         p = self.player
         self.hp        -= 1
@@ -725,7 +815,7 @@ class Game:
                 self.shake  = 5
 
         for e in self.enemies[:]:
-            if not e.stunned and e.pos.distance_to(p.pos) < e.radius + p.radius:
+            if not e.stunned and e.spawn_grace <= 0 and e.pos.distance_to(p.pos) < e.radius + p.radius:
                 if p.chaos_mode:
                     self._burst(int(e.pos.x), int(e.pos.y), ENEMY_COL, 22, (2, 7))
                     self._on_enemy_killed(e)
@@ -779,6 +869,8 @@ class Game:
         self.player.draw(world)
         surf.blit(world, (ox, oy))
         self.dust.draw(surf, ox, oy)
+        if self.renderer.bloom_enabled and len(self.enemies) <= _LOD_ENEMIES:
+            self.renderer.draw_bloom(surf)
 
         if self.player.chaos_mode:
             self.renderer.draw_chromatic(surf)
@@ -808,6 +900,11 @@ class Game:
         self.ui.draw_crosshair(surf, (mx, my),
                                WEAPON_COLORS[self.player.weapon_index])
 
+        if self._boss_intro > 0 and self.boss:
+            self._draw_boss_intro(surf)
+        if self.cheated:
+            ct = self.ui.font_s.render("CHEATS ON - RUN WON'T BE SAVED", True, (255, 120, 60))
+            surf.blit(ct, (W // 2 - ct.get_width() // 2, 14 if self.daily else 2))
         if self.daily:
             tag = self.ui.font_s.render(f"DAILY RUN  {self.daily_date or ''}", True, (255, 190, 0))
             surf.blit(tag, (W // 2 - tag.get_width() // 2, 2))

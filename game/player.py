@@ -29,6 +29,9 @@ class Player:
     def __init__(self, x: float, y: float) -> None:
         self.pos          = pygame.Vector2(x, y)
         self.perks: dict  = {}        # perk key -> stack count (shared with Game)
+        self.speed_mult   = 1.0       # console/cheat knobs
+        self.fire_mult    = 1.0
+        self.infinite_dash = False
         self.radius       = PLAYER_RADIUS
         self.energy       = 0.0
         self.max_energy   = PLAYER_MAX_ENERGY
@@ -80,7 +83,7 @@ class Player:
 
         # Movement
         vel = pygame.Vector2(0, 0)
-        spd = PLAYER_SPEED * (CHAOS_SPEED_MULT if self.chaos_mode else 1.0)
+        spd = PLAYER_SPEED * (CHAOS_SPEED_MULT if self.chaos_mode else 1.0) * self.speed_mult
 
         if keys[pygame.K_w] or keys[pygame.K_UP]:    vel.y -= 1
         if keys[pygame.K_s] or keys[pygame.K_DOWN]:  vel.y += 1
@@ -163,7 +166,8 @@ class Player:
             vel = pygame.Vector2(math.cos(self._angle), math.sin(self._angle))
         self._dash_vel         = vel.normalize() * PLAYER_DASH_SPEED
         self._dash_time_left   = PLAYER_DASH_FRAMES / 60.0
-        self.dash_charges     -= 1
+        if not self.infinite_dash:
+            self.dash_charges -= 1
         if self._dash_recharge <= 0:
             self._dash_recharge = PLAYER_DASH_CHARGE_CD
         self.is_dashing        = True
@@ -189,15 +193,15 @@ class Player:
 
         if wi == 0 and cdl[0] <= 0:          # Plasma Bolt
             self._fire_plasma(dx, dy)
-            cdl[0] = PLASMA_CD * 0.75 ** self.perks.get("overclock", 0)
+            cdl[0] = PLASMA_CD * 0.75 ** self.perks.get("overclock", 0) * self.fire_mult
 
         elif wi == 1 and cdl[1] <= 0:        # Void Spread
             self._fire_spread(dx, dy)
-            cdl[1] = SPREAD_CD * 0.75 ** self.perks.get("overclock", 0)
+            cdl[1] = SPREAD_CD * 0.75 ** self.perks.get("overclock", 0) * self.fire_mult
 
         elif wi == 2 and cdl[2] <= 0:        # Chain Zap
             self._fire_chain(enemies)
-            cdl[2] = CHAIN_CD
+            cdl[2] = CHAIN_CD * self.fire_mult
 
         elif wi == 3:                          # Null Beam (hold)
             self._fire_beam(dx, dy, enemies, dt)

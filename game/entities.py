@@ -200,6 +200,7 @@ class _BaseEnemy:
         self._k         = 1.0   # dt*60, refreshed every update
         self.shield     = 0     # >0 while a Shield Drone protects this enemy
         self._dead      = False # set by Game on kill; lets stale spatial-hash entries be skipped
+        self.spawn_grace = 0.0  # >0 right after spawning: harmless to touch (spawn-in telegraph)
 
     def take_damage(self, dmg: float) -> bool:
         if self.shield > 0:
