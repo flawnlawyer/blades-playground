@@ -225,6 +225,16 @@ SPLITTER_COL    = (200, 150, 255)
 VIGNETTE_DARKEN       = 0.55     # how dark the extreme corners get (0 = off, 1 = black)
 SCANLINE_DARKEN      = 14       # 0-255, every 3rd row
 
+# Sniper (ranged enemy)
+SNIPER_RADIUS        = 12
+SNIPER_HP            = 2
+SNIPER_SCORE         = 75
+SNIPER_COL           = (255, 200,  60)
+SNIPER_KEEP_DIST     = 330
+SNIPER_CD            = 2.6
+SNIPER_TELEGRAPH     = 0.9
+SNIPER_BULLET_SPEED  = 430
+
 PRISM_HP             = 24
 PRISM_RADIUS         = 30
 PRISM_SCORE          = 800

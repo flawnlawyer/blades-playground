@@ -32,7 +32,7 @@ KIND_COLORS = {
 }
 
 ENEMY_TYPES = ("standard", "hunter", "swarm", "phantom", "berserker",
-               "teleporter", "shield_drone", "splitter")
+               "teleporter", "shield_drone", "splitter", "sniper")
 _TYPE_ALIASES = {"basic": "standard", "drone": "shield_drone", "shield": "shield_drone",
                  "tele": "teleporter", "zerk": "berserker"}
 BOSS_KINDS = ("architect", "prism")
@@ -124,7 +124,7 @@ def _enemy_class(t: str):
     from game import entities as E
     return {"standard": E.Enemy, "hunter": E.Hunter, "swarm": E.SwarmNode, "phantom": E.Phantom,
             "berserker": E.Berserker, "teleporter": E.Teleporter,
-            "shield_drone": E.ShieldDrone, "splitter": E.Splitter}[t]
+            "shield_drone": E.ShieldDrone, "splitter": E.Splitter, "sniper": E.Sniper}[t]
 
 
 def _perk_key(s: str) -> str:
