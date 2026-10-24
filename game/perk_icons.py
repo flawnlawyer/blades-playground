@@ -63,6 +63,32 @@ def draw_perk_icon(surf: pygame.Surface, key: str, cx: int, cy: int,
         ax, ay = cx + math.cos(0.6) * r, cy - math.sin(0.6) * r
         d.polygon(surf, color, [(ax + 9, ay - 2), (ax - 3, ay - 9), (ax - 2, ay + 8)])
         d.circle(surf, _dim(color, 0.7), (cx, cy), 5)
+    elif key == "homing":                                    # bolt curving into a target
+        d.circle(surf, _dim(color, 0.6), (int(cx + s * 0.7), int(cy - s * 0.5)), int(s * 0.32), 2)
+        pts = [(cx - s, cy + s * 0.7), (cx - s * 0.3, cy + s * 0.75), (cx + s * 0.3, cy + s * 0.3),
+               (cx + s * 0.6, cy - s * 0.3)]
+        d.lines(surf, color, False, pts, 3)
+        d.polygon(surf, color, [(cx + s * 0.7, cy - s * 0.5), (cx + s * 0.3, cy - s * 0.45), (cx + s * 0.55, cy - s * 0.05)])
+    elif key == "void_bloom":                                # fan of nine pellets
+        for i in range(9):
+            a = math.radians(-70 + i * 17.5) - math.pi / 2 + math.pi / 2
+            ex, ey = cx + math.sin(a) * s * 1.05, cy + s * 0.55 - math.cos(a) * s * 1.35
+            d.line(surf, _dim(color, 0.5), (cx, cy + s * 0.6), (ex, ey), 1)
+            d.circle(surf, color, (int(ex), int(ey)), 3)
+    elif key == "tesla":                                     # coil rings + arc
+        for r, k in ((0.9, 0.45), (0.6, 0.7), (0.3, 1.0)):
+            d.circle(surf, _dim(color, k), (cx, cy), int(s * r), 2)
+        d.lines(surf, color, False, [(cx - s * 1.1, cy + s * 0.9), (cx - s * 0.3, cy + s * 0.2),
+                                     (cx + s * 0.1, cy + s * 0.5), (cx + s * 0.9, cy - s * 0.8)], 2)
+    elif key == "null_lance":                                # long beam with a bright core
+        d.line(surf, _dim(color, 0.45), (cx - s * 1.1, cy), (cx + s * 0.7, cy), int(s * 0.5))
+        d.line(surf, color, (cx - s * 1.1, cy), (cx + s * 0.7, cy), int(s * 0.2))
+        d.polygon(surf, color, [(cx + s * 1.15, cy), (cx + s * 0.6, cy - s * 0.4), (cx + s * 0.6, cy + s * 0.4)])
+    elif key == "cluster":                                   # big bomb + four bomblets
+        d.circle(surf, color, (cx, cy), int(s * 0.38))
+        for dx, dy in ((-1, -1), (1, -1), (-1, 1), (1, 1)):
+            d.circle(surf, _dim(color, 0.7), (int(cx + dx * s * 0.8), int(cy + dy * s * 0.7)), int(s * 0.2))
+            d.line(surf, _dim(color, 0.4), (cx, cy), (cx + dx * s * 0.8, cy + dy * s * 0.7), 1)
     else:                                                    # unknown perk: generic badge
         d.circle(surf, color, (cx, cy), int(s * 0.8), 2)
         d.circle(surf, color, (cx, cy), int(s * 0.3))
