@@ -20,13 +20,13 @@ from game.constants import (
     PRISM_HP, MAX_ENEMY_BULLETS,
     DEATH_SLOW_FACTOR, DEATH_SLOW_DURATION,
     SHIELD_COL, BERSERKER_RAGE_COL, TELEPORTER_COL, SPLITTER_COL,
-    HUNTER_COL, SWARM_COL, PHANTOM_COL, BERSERKER_COL, BOSS_COL,
+    HUNTER_COL, SWARM_COL, PHANTOM_COL, BERSERKER_COL, BOSS_COL, SNIPER_COL,
 )
 from game.player       import Player
 from game.entities     import (MehBlock, Fragment, Enemy, Hunter, SwarmNode, Phantom, Boss,
                                Projectile, Berserker, Teleporter, ShieldDrone, Splitter,
-                               Prism, EnemyBullet)
-from game.perks        import PERKS, roll_choices
+                               Prism, EnemyBullet, Sniper)
+from game.perks        import PERKS, SYNERGIES, roll_choices, active_synergies, meets
 from game.music        import MusicEngine
 from utils.helpers     import fade_ring
 from utils             import helpers as _helpers
@@ -45,7 +45,7 @@ _LOD_ENEMIES   = 120     # above this many enemies, skip glows / HP bars
 
 _ENEMY_COLORS = {Enemy: ENEMY_COL, Hunter: HUNTER_COL, SwarmNode: SWARM_COL,
                  Phantom: PHANTOM_COL, Berserker: BERSERKER_COL, Teleporter: TELEPORTER_COL,
-                 ShieldDrone: SHIELD_COL, Splitter: SPLITTER_COL}
+                 ShieldDrone: SHIELD_COL, Splitter: SPLITTER_COL, Sniper: SNIPER_COL}
 
 
 class Game:
@@ -132,6 +132,8 @@ class Game:
             self.enemies.append(ShieldDrone(x, y))
         elif etype == "splitter":
             self.enemies.append(Splitter(x, y))
+        elif etype == "sniper":
+            self.enemies.append(Sniper(x, y))
         if len(self.enemies) > n0 and not self.stress_target:     # spawn-in: converging ring + brief grace
             e = self.enemies[-1]
             e.spawn_grace = 0.5
@@ -159,12 +161,22 @@ class Game:
         self.enemy_bullets : list           = []
         self._hitstop_t  = 0.0
         self._boss_state_prev = None
+        self.last_hit    = ""
+        self.stats       = {"kills": 0, "bosses": [], "max_streak": 0, "hits": 0}   # for progression / achievements
+        self._frags_collected = 0
+        self._sniper_sfx_cd   = 0.0
         # Console / cheats
         self.cheated        = False       # any cheat used => run is never saved
         self.god            = False
         self.dmg_mult       = 1.0
         self.freeze_enemies = False
         self.time_scale     = 1.0
+        # Player presentation settings (utils.settings.apply_to_game)
+        self.shake_scale     = 1.0
+        self.hitstop_enabled = True
+        # Input: a bot (or replay) can drive the run through input_source.poll(game)
+        self.input_source   = None
+        self.pad_fire       = False
         # Boss intro cinematic
         self._boss_intro    = 0.0
         self._boss_intro_total = 1.8
@@ -259,15 +271,23 @@ class Game:
             dt = real_dt * 0.35
         self.run_time    += dt
         self._last_dt     = real_dt
-        keys              = pygame.key.get_pressed()
-        mouse_pos         = self._logical_mouse
-        mouse_buttons     = ((False, False, False) if self.dying
+        if self.input_source is not None:
+            keys, mouse_pos, mouse_buttons = self.input_source.poll(self)
+            if self.dying:
+                mouse_buttons = (False, False, False)
+        else:
+            keys          = pygame.key.get_pressed()
+            mouse_pos     = self._logical_mouse
+            mouse_buttons = ((False, False, False) if self.dying
                              else pygame.mouse.get_pressed())
+            if self.pad_fire and not self.dying:                 # gamepad right trigger
+                mouse_buttons = (True,) + tuple(mouse_buttons[1:])
         if self.stress_target:                      # hands-free stress test: hold fire
             mouse_buttons = (True, False, False)
         p                 = self.player
 
-        p.update(keys, dt, mouse_pos, mouse_buttons, self.enemies)
+        chain_pool = (self.enemies + [self.boss]) if (self.boss and self.perks.get("tesla")) else self.enemies
+        p.update(keys, dt, mouse_pos, mouse_buttons, chain_pool)
 
         if p._chaos_just_ended:
             self.audio.chaos_end()
@@ -304,11 +324,13 @@ class Game:
             if self.streak_timer <= 0:
                 self.streak = 0
 
-        for proj in self.projectiles:
-            proj.update(dt)
-
         if self.projectiles:                       # broad-phase only needed when something can hit
             self._eh.rebuild(self.enemies)
+            for proj in self.projectiles:
+                if proj.homing:
+                    self._steer(proj, dt)
+        for proj in self.projectiles:
+            proj.update(dt)
         self.dust.update(dt)
         dead_projs = set()
         for i, proj in enumerate(self.projectiles):
@@ -339,6 +361,8 @@ class Game:
                 if dealt and proj.pierce > 0:            # PIERCE: keep flying
                     proj.pierce -= 1
                     proj.hit_ids.add(id(e))
+                    if self._synergy("detonating_trails"):
+                        self._mini_blast(proj.pos.x, proj.pos.y, 55, 1.0, (255, 140, 40))
                 else:
                     proj.alive = False
                     dead_projs.add(i)
@@ -356,11 +380,14 @@ class Game:
         if p.chain_targets:
             prev_pos = pygame.Vector2(p.pos)
             for target in p.chain_targets:
-                killed = target.take_damage(CHAIN_DAMAGE * self.dmg_mult)
+                killed = target.take_damage((CHAIN_DAMAGE + self.perks.get("tesla", 0)) * self.dmg_mult)
                 mid    = (prev_pos + target.pos) / 2
                 self._burst(int(mid.x), int(mid.y), (100, 255, 180), 5, (2, 6))
                 if killed:
-                    self._on_enemy_killed(target)
+                    if target is self.boss:
+                        self._on_boss_killed()
+                    else:
+                        self._on_enemy_killed(target)
                 prev_pos = pygame.Vector2(target.pos)
             self.audio.chain_zap()
             p.chain_targets.clear()
@@ -379,9 +406,22 @@ class Game:
         for e in self.enemies:
             if e.spawn_grace > 0:
                 e.spawn_grace -= dt
+        if self._sniper_sfx_cd > 0:
+            self._sniper_sfx_cd -= dt
         if not self.freeze_enemies:
             for e in self.enemies:
                 e.update(dt, p.pos)
+                bq = getattr(e, "bullet_queue", None)
+                if bq:                                         # ranged enemies (Sniper)
+                    for item in bq:
+                        if len(self.enemy_bullets) < MAX_ENEMY_BULLETS:
+                            self.enemy_bullets.append(EnemyBullet(*item))
+                    bq.clear()
+                if getattr(e, "just_aimed", False):
+                    e.just_aimed = False
+                    if self._sniper_sfx_cd <= 0:
+                        self.audio.play("telegraph")
+                        self._sniper_sfx_cd = 0.4
         self._enemy_effects()
 
         if self.boss and not self.freeze_enemies:
@@ -467,7 +507,7 @@ class Game:
                     self.dust.emit(b.pos.x, b.pos.y, 10, b.color, speed=(60.0, 220.0))
                 elif not p.invulnerable and not self.dying:
                     b.alive = False
-                    self._hurt_player(b.pos, 10, 14, 40)
+                    self._hurt_player(b.pos, 10, 14, 40, "bullet")
         self.enemy_bullets = [b for b in self.enemy_bullets if b.alive]
 
     def _clear_bullets(self) -> None:
@@ -478,7 +518,7 @@ class Game:
     def _shake_offset(self, t: float) -> tuple:
         """Screen-shake offset at time *t* (s): smooth layered sines, |offset| <= shake.
         (Was a fresh random jump every frame, which reads as jitter, not impact.)"""
-        sh = self.shake
+        sh = self.shake * self.shake_scale
         if sh < 1:
             return 0, 0
         return (int(sh * (0.7 * math.sin(t * 47.0) + 0.3 * math.sin(t * 91.3 + 1.7))),
@@ -486,8 +526,52 @@ class Game:
 
     def _freeze(self, seconds: float) -> None:
         """Hit-stop: briefly freeze the simulation on impactful moments."""
-        if not self.stress_target:
+        if not self.stress_target and self.hitstop_enabled:
             self._hitstop_t = min(0.3, max(self._hitstop_t, seconds))
+
+    def run_stats(self) -> dict:
+        """Snapshot of this run for utils.meta.award_run (shards + achievements)."""
+        return {"score": self.score, "wave": self.wave_mgr.wave, "kills": self.stats["kills"],
+                "bosses": list(self.stats["bosses"]), "max_streak": self.stats["max_streak"],
+                "hits": self.stats["hits"], "chaos": self.player.chaos_activations,
+                "perk_stacks": sum(self.perks.values()), "daily": self.daily,
+                "cheated": self.cheated, "stress": bool(self.stress_target),
+                "seconds": self.run_time}
+
+    def _synergy(self, key: str) -> bool:
+        return meets(SYNERGIES[key].requires, self.perks)
+
+    def _steer(self, proj, dt: float) -> None:
+        """HOMING BOLTS: bend the bolt toward the nearest live enemy / boss within 260px."""
+        best, best_d = None, 260.0
+        for e in self._eh.nearby(proj.pos.x, proj.pos.y, 260):
+            if e._dead or id(e) in proj.hit_ids:
+                continue
+            d = e.pos.distance_to(proj.pos)
+            if d < best_d:
+                best, best_d = e, d
+        if self.boss and (self.boss.pos - proj.pos).length() < best_d:
+            best = self.boss
+        if best is None:
+            return
+        speed = proj.vel.length()
+        want  = best.pos - proj.pos
+        if speed > 0 and want.length_squared() > 0:
+            proj.vel = proj.vel.lerp(want.normalize() * speed, min(1.0, 6.0 * dt))
+            if proj.vel.length_squared() > 0:
+                proj.vel.scale_to_length(speed)
+
+    def _mini_blast(self, x: float, y: float, radius: float, dmg: float, color: tuple) -> None:
+        """Small area blast used by CLUSTER BOMBS and DETONATING TRAILS."""
+        self._ring(int(x), int(y), color, 6, int(radius), 0.3)
+        self._burst(int(x), int(y), color, 8, (2, 6))
+        c = pygame.Vector2(x, y)
+        for e in self.enemies[:]:
+            if e.pos.distance_to(c) < radius and e.take_damage(dmg * self.dmg_mult):
+                self._on_enemy_killed(e)
+        if self.boss and (self.boss.pos - c).length() < radius + self.boss.radius:
+            if self.boss.take_damage(dmg * self.dmg_mult):
+                self._on_boss_killed()
 
     def _stress_tick(self) -> None:
         """--stress N: keep ~N enemies alive, make the player unkillable."""
@@ -504,12 +588,12 @@ class Game:
         along = ex * cx + ey * cy
         if along < 0 or along > 500:
             return False
-        return abs(ex * cy - ey * cx) < ent.radius + 6
+        return abs(ex * cy - ey * cx) < ent.radius + (14 if self.perks.get("null_lance") else 6)
 
     def _apply_beam(self, dt: float) -> None:
         p   = self.player
         cx, cy = math.cos(p._angle), math.sin(p._angle)
-        dmg = BEAM_DAMAGE_PS * dt * self.dmg_mult   # float damage — no int truncation to 0
+        dmg = BEAM_DAMAGE_PS * dt * self.dmg_mult * (1.5 if self.perks.get("null_lance") else 1.0)   # float damage
         sfx = self._beam_sfx_cd <= 0
         if sfx:                            # throttled: was fired every frame
             self.audio.beam_hum()
@@ -530,6 +614,10 @@ class Game:
         self._ring(cx, cy, proj.color, 10, BOMB_RADIUS, 0.5)
         self.dust.emit(cx, cy, 500, proj.color, speed=(80.0, 520.0), life=(0.4, 1.1))
         self._freeze(0.06)
+        if self.perks.get("cluster"):                       # evolution: four smaller blasts
+            for k in range(4):
+                a = math.tau * k / 4 + 0.6
+                self._mini_blast(cx + math.cos(a) * 75, cy + math.sin(a) * 75, 80, BOMB_DAMAGE * 0.5, proj.color)
         self.audio.bomb_explode()
         self.shake = 14
         for e in self.enemies[:]:
@@ -602,6 +690,7 @@ class Game:
         """Count a kill toward the streak; returns the multiplier to score it at."""
         old = self._streak_mult()
         self.streak      += 1
+        self.stats["max_streak"] = max(self.stats["max_streak"], self.streak)
         self.streak_timer = STREAK_RESET_TIME
         new = self._streak_mult()
         if new > old:
@@ -659,6 +748,7 @@ class Game:
             return
         self.enemies.remove(e)
         e._dead = True
+        self.stats["kills"] += 1
         if isinstance(e, ShieldDrone):
             self.audio.play("shield_break")
         ex, ey = int(e.pos.x), int(e.pos.y)
@@ -699,6 +789,7 @@ class Game:
         boss = self.boss
         if boss is None:
             return
+        self.stats["bosses"].append(getattr(boss, "name", "BOSS"))
         pos = boss.pos
         bx, by = int(pos.x), int(pos.y)
         mult = self._register_kill()
@@ -719,7 +810,12 @@ class Game:
         perk = PERKS.get(key)
         if perk is None or self.perks.get(key, 0) >= perk.max_stacks:
             return
+        before = {s.key for s in active_synergies(self.perks)}
         self.perks[key] = self.perks.get(key, 0) + 1
+        for syn in active_synergies(self.perks):
+            if syn.key not in before:
+                self._text_popup(self.player.pos.x, self.player.pos.y - 62, f"SYNERGY: {syn.name}", syn.color)
+                self.audio.level_up()
         if key == "repair":
             self.hp += 1
         elif key == "phase_drive":
@@ -729,16 +825,21 @@ class Game:
 
     # ── Damage to the player ──────────────────────────────────────────────────
 
-    def _hurt_player(self, src_pos, shake: int, burst_n: int, push_dist: float) -> None:
+    def _hurt_player(self, src_pos, shake: int, burst_n: int, push_dist: float, src: str = "") -> None:
         if self.dying or self.god:
             return
         p = self.player
         self.hp        -= 1
+        self.stats["hits"] += 1
+        self.last_hit  = src                # what hurt us last (telemetry for the balance bot)
         p.inv_timer     = PLAYER_INV_DURATION
         self.shake      = shake
         self.streak     = 0                           # getting hit breaks the streak
         self.audio.player_hit()
         self._freeze(0.07)
+        pad = getattr(self.manager, "gamepad", None)
+        if pad is not None:
+            pad.rumble(0.7, 160)
         self._burst(int(p.pos.x), int(p.pos.y), ENEMY_COL, burst_n)
         self.renderer.trigger_flash((210, 45, 75))
         push = p.pos - src_pos
@@ -762,6 +863,8 @@ class Game:
             self._ring(int(p.pos.x), int(p.pos.y), WHITE, 10, 260, 0.7)
             self._burst(int(p.pos.x), int(p.pos.y), WHITE, 30, (3, 10))
             self._text_popup(p.pos.x, p.pos.y - 40, "SECOND WIND", WHITE)
+            if self._synergy("last_stand"):                       # synergy: SECOND WIND also triggers Chaos
+                p.energy, p.chaos_mode, p.chaos_timer = p.max_energy, True, 5.0
             self._clear_bullets()
             self.renderer.trigger_flash((255, 255, 255), 0.2)
             self._freeze(0.2)
@@ -801,7 +904,8 @@ class Game:
                         self.shake  = 4
 
         for f in self.fragments[:]:
-            if f.pos.distance_to(p.pos) < p.radius + f.radius:
+            magnet = p.frag_magnet + (110 if (p.is_dashing and self._synergy("slipstream")) else 0)   # MAGNET + SLIPSTREAM
+            if f.pos.distance_to(p.pos) < p.radius + f.radius + magnet:
                 self.frag_text  = f.text
                 self.frag_timer = FRAG_POPUP_DURATION
                 self._burst(int(f.pos.x), int(f.pos.y), FRAG_COL, 24, (1, 6))
@@ -812,6 +916,10 @@ class Game:
                     self._ring(int(p.pos.x), int(p.pos.y), CHAOS_COL, 10, 120, 0.55)
                     self.audio.chaos_activate()
                 self.score += FRAG_SCORE_REWARD
+                self._frags_collected += 1
+                if self._synergy("regen_matrix") and self._frags_collected % 6 == 0:   # synergy
+                    self.hp += 1
+                    self._text_popup(p.pos.x, p.pos.y - 30, "+1 HP", (210, 45, 75))
                 self.shake  = 5
 
         for e in self.enemies[:]:
@@ -821,7 +929,7 @@ class Game:
                     self._on_enemy_killed(e)
                     self.audio.meh_destroy()
                 elif not p.invulnerable:
-                    self._hurt_player(e.pos, 12, 18, 70)
+                    self._hurt_player(e.pos, 12, 18, 70, type(e).__name__)
 
         if self.boss and not self.boss.stunned and hasattr(self.boss, 'pos'):
             # use squared-length check to avoid relying on distance_to attribute
@@ -830,7 +938,7 @@ class Game:
                 if p.chaos_mode:
                     self._on_boss_killed()
                 elif not p.invulnerable:
-                    self._hurt_player(self.boss.pos, 16, 22, 90)
+                    self._hurt_player(self.boss.pos, 16, 22, 90, getattr(self.boss, "name", "boss"))
 
     def _replenish(self) -> None:
         if len(self.meh_blocks) < MEH_SPAWN_MIN:
@@ -886,6 +994,8 @@ class Game:
                             self.streak_timer / STREAK_RESET_TIME)
         self.ui.draw_perks(surf, [(PERKS[k].name, n, PERKS[k].color)
                                   for k, n in self.perks.items()])
+        self.ui.draw_synergies(surf, [(s.name, s.color) for s in active_synergies(self.perks)],
+                               46 + 14 * len(self.perks))
         if self.boss:
             self.ui.draw_boss_bar(surf, self.boss)
 

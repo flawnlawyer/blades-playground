@@ -29,6 +29,8 @@ from game.constants import (
     SPLITTER_RADIUS, SPLITTER_HP, SPLITTER_SCORE, SPLITTER_SPEED, SPLITTER_COL,
     PRISM_HP, PRISM_RADIUS, PRISM_SCORE, PRISM_COL,
     ENEMY_BULLET_RADIUS, ENEMY_BULLET_COL,
+    SNIPER_RADIUS, SNIPER_HP, SNIPER_SCORE, SNIPER_COL, SNIPER_KEEP_DIST, SNIPER_CD,
+    SNIPER_TELEGRAPH, SNIPER_BULLET_SPEED,
 )
 from utils import helpers as _helpers
 from utils.helpers import glow_circle, glow_circle_multi, rotate_points, _q, _qa
@@ -139,6 +141,7 @@ class Projectile:
 
         # Piercing (PIERCE perk): how many extra enemies it may pass through
         self.pierce      = 0
+        self.homing      = False      # HOMING BOLTS evolution
         self.hit_ids: set = set()
 
         # Bomb-specific
@@ -615,6 +618,85 @@ class Splitter(_BaseEnemy):
         pygame.draw.polygon(surf, WHITE, pts, 1)
         # the seam it will split along
         pygame.draw.line(surf, WHITE, (cx, cy - r + 3), (cx, cy + r - 3), 1)
+        self._draw_hp_bar(surf, cx, cy, r)
+
+
+# ── Sniper ────────────────────────────────────────────────────────────────────
+
+class Sniper(_BaseEnemy):
+    """Ranged enemy.  Keeps its distance, then telegraphs with a laser line for
+    ~0.9 s (the aim locks for the last 0.25 s) and fires one fast bullet.
+    Counters: dash through the shot, HACK (stun / scrub the bullet), or break line of fire."""
+    def __init__(self, x: float, y: float) -> None:
+        super().__init__(x, y, hp=SNIPER_HP)
+        self.radius       = SNIPER_RADIUS
+        self.score_val    = SNIPER_SCORE
+        self.speed        = 1.6
+        self._cd          = random.uniform(1.0, SNIPER_CD)
+        self._aim_t       = 0.0                    # >0 while telegraphing
+        self.aim          = pygame.Vector2(x, y)   # where the shot is going
+        self.bullet_queue: list = []               # (x, y, vx, vy, colour, radius) consumed by Game
+        self.just_aimed   = False                  # consumed by Game for the warning sound
+        self._strafe      = random.choice((-1, 1))
+
+    @property
+    def aiming(self) -> bool:
+        return self._aim_t > 0
+
+    def stun(self) -> None:
+        super().stun()
+        self._aim_t = 0.0                          # a hacked sniper loses its shot
+        self._cd    = SNIPER_CD
+
+    def update(self, dt: float, player_pos: pygame.Vector2) -> None:
+        if self._tick_stun(dt):
+            return
+        d    = player_pos - self.pos
+        dist = d.length()
+        if dist > 0.001 and not self.aiming:       # hold position while lining up the shot
+            dirv = d / dist
+            if dist < SNIPER_KEEP_DIST - 70:
+                self.pos -= dirv * self.speed * 1.2 * self._k          # too close: back off
+            elif dist > SNIPER_KEEP_DIST + 90:
+                self.pos += dirv * self.speed * self._k                # too far: close in
+            else:
+                perp = pygame.Vector2(-dirv.y, dirv.x) * self._strafe
+                self.pos += perp * self.speed * 0.6 * self._k          # circle-strafe
+        if self.aiming:
+            self._aim_t -= dt
+            if self._aim_t > 0.25:                 # track the player, then lock for the last 0.25 s
+                self.aim = pygame.Vector2(player_pos)
+            if self._aim_t <= 0:
+                v = self.aim - self.pos
+                if v.length_squared() > 0:
+                    v = v.normalize() * SNIPER_BULLET_SPEED
+                    self.bullet_queue.append((self.pos.x, self.pos.y, v.x, v.y, SNIPER_COL, 5))
+                self._cd = SNIPER_CD
+        else:
+            self._cd -= dt
+            if self._cd <= 0:
+                self._aim_t, self.aim, self.just_aimed = SNIPER_TELEGRAPH, pygame.Vector2(player_pos), True
+        self.pos.x = max(self.radius, min(W - self.radius, self.pos.x))
+        self.pos.y = max(self.radius, min(H - self.radius, self.pos.y))
+
+    def draw(self, surf: pygame.Surface) -> None:
+        col = (80, 80, 100) if self.stunned else SNIPER_COL
+        cx  = int(self.pos[0]) + self._glitch[0]
+        cy  = int(self.pos[1]) + self._glitch[1]
+        r   = self.radius
+        if self.aiming and not self.stunned:       # laser telegraph: thin -> bright as the shot nears
+            t = 1.0 - max(0.0, self._aim_t) / SNIPER_TELEGRAPH
+            a = int(40 + 200 * t * t)
+            end = (int(self.aim.x), int(self.aim.y))
+            pygame.draw.line(surf, (*SNIPER_COL, a), (cx, cy), end, 1 + (1 if self._aim_t < 0.25 else 0))
+            glow_circle(surf, SNIPER_COL, (cx, cy), r + 6 + int(6 * t), 30 + int(60 * t))
+        elif not self.stunned:
+            glow_circle(surf, SNIPER_COL, (cx, cy), r + 4, 24)
+        pts = [(cx, cy - r - 3), (cx + r, cy), (cx, cy + r + 3), (cx - r, cy)]
+        pygame.draw.polygon(surf, col, pts)
+        pygame.draw.polygon(surf, WHITE, pts, 1)
+        pygame.draw.line(surf, WHITE, (cx - r - 4, cy), (cx + r + 4, cy), 1)     # crosshair
+        pygame.draw.line(surf, WHITE, (cx, cy - r - 6), (cx, cy + r + 6), 1)
         self._draw_hp_bar(surf, cx, cy, r)
 
 
