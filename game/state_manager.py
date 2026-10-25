@@ -85,6 +85,8 @@ class StateManager:
         from game.console import Console
         self.console     = Console(self)  # ` / F10 in-game; same commands from the launching terminal
         self.active_game = None           # set by PlayState so console commands can reach the run
+        from utils.gamepad import Gamepad
+        self.gamepad     = Gamepad()      # optional controller (no-op when none connected)
         self.clock      = pygame.time.Clock()
         self._stack: list[BaseState] = []
         self.transition = FadeTransition(0.30)
@@ -216,13 +218,30 @@ class StateManager:
     def current(self) -> BaseState | None:
         return self._stack[-1] if self._stack else None
 
+    def _translate_pad(self, events: list) -> list:
+        """Hotplug handling + gamepad buttons -> menu keys, so every menu works with a pad."""
+        from utils.gamepad import menu_key_for_button
+        pad, out = self.gamepad, []
+        in_game = getattr(self.current, "wants_raw_pad", False)
+        down = getattr(pygame, "CONTROLLERBUTTONDOWN", -1)
+        for ev in events:
+            out.append(ev)
+            pad.handle_device_event(ev)
+            if ev.type == pygame.MOUSEMOTION:
+                pad.aiming = False                      # mouse moved: it aims again
+            elif ev.type == down and pad.enabled:
+                k = menu_key_for_button(ev.button, in_game)
+                if k is not None:
+                    out.append(pygame.event.Event(pygame.KEYDOWN, key=k, unicode="", mod=0))
+        return out
+
     # ── Main loop ─────────────────────────────────────────────────────────────
 
     def run(self) -> None:
         while self._stack and not self._quitting:
             dt = min(self.clock.tick(FPS) / 1000.0, 0.05)
 
-            events = pygame.event.get()
+            events = self._translate_pad(pygame.event.get())
             if self.presenter:                       # window size can change without a VIDEORESIZE
                 self._update_scaling()
             for ev in events:
