@@ -21,6 +21,7 @@ from game.constants import (
     BOMB_MAX, BOMB_RECHARGE, BOMB_RADIUS, BOMB_DAMAGE, BOMB_FUSE,
 )
 from game.entities import Projectile
+from utils.keybinds import KEYS
 from utils.helpers import (glow_circle, glow_circle_multi, rotate_points,
                            lerp_color, fade_circle)
 
@@ -29,6 +30,7 @@ class Player:
     def __init__(self, x: float, y: float) -> None:
         self.pos          = pygame.Vector2(x, y)
         self.perks: dict  = {}        # perk key -> stack count (shared with Game)
+        self.analog       = pygame.Vector2()   # gamepad left stick (set by PlayState each frame)
         self.speed_mult   = 1.0       # console/cheat knobs
         self.fire_mult    = 1.0
         self.infinite_dash = False
@@ -54,7 +56,11 @@ class Player:
         # Weapons
         self.weapon_index    = 0          # 0–4
         self._weapon_cds     = [0.0] * 5
-        self.bomb_count      = BOMB_MAX
+        self.bomb_max        = BOMB_MAX            # ARSENAL upgrade raises this
+        self.bomb_count      = self.bomb_max
+        self.meta_dash       = 0                   # QUICKSTEP upgrade
+        self.frag_magnet     = 0                   # MAGNET upgrade (extra pickup radius, px)
+        self.chaos_activations = 0                 # for achievements
         self._bomb_recharge  = 0.0
         self._beam_firing    = False
 
@@ -85,13 +91,15 @@ class Player:
         vel = pygame.Vector2(0, 0)
         spd = PLAYER_SPEED * (CHAOS_SPEED_MULT if self.chaos_mode else 1.0) * self.speed_mult
 
-        if keys[pygame.K_w] or keys[pygame.K_UP]:    vel.y -= 1
-        if keys[pygame.K_s] or keys[pygame.K_DOWN]:  vel.y += 1
-        if keys[pygame.K_a] or keys[pygame.K_LEFT]:  vel.x -= 1
-        if keys[pygame.K_d] or keys[pygame.K_RIGHT]: vel.x += 1
+        if KEYS.pressed(keys, "up"):    vel.y -= 1
+        if KEYS.pressed(keys, "down"):  vel.y += 1
+        if KEYS.pressed(keys, "left"):  vel.x -= 1
+        if KEYS.pressed(keys, "right"): vel.x += 1
 
         if vel.length_squared() > 0:
             vel = vel.normalize() * spd
+        elif self.analog.length_squared() > 0:                 # gamepad: analog speed
+            vel = self.analog * spd
 
         # Dash
         k = dt * 60.0
@@ -125,7 +133,7 @@ class Player:
                 self._weapon_cds[i] -= dt
 
         # Bomb recharge
-        if self.bomb_count < BOMB_MAX:
+        if self.bomb_count < self.bomb_max:
             self._bomb_recharge -= dt
             if self._bomb_recharge <= 0:
                 self.bomb_count     += 1
@@ -141,9 +149,8 @@ class Player:
                 self._chaos_just_ended = True
 
         # Weapon switching (keys 1–5)
-        for i, key in enumerate([pygame.K_1, pygame.K_2, pygame.K_3,
-                                  pygame.K_4, pygame.K_5]):
-            if keys[key]:
+        for i in range(5):
+            if KEYS.pressed(keys, f"weapon{i + 1}"):
                 self.weapon_index = i
 
         # Weapon fire
@@ -158,10 +165,12 @@ class Player:
         if self.dash_charges <= 0 or self.is_dashing:
             return False
         vel = pygame.Vector2(0, 0)
-        if keys[pygame.K_w] or keys[pygame.K_UP]:    vel.y -= 1
-        if keys[pygame.K_s] or keys[pygame.K_DOWN]:  vel.y += 1
-        if keys[pygame.K_a] or keys[pygame.K_LEFT]:  vel.x -= 1
-        if keys[pygame.K_d] or keys[pygame.K_RIGHT]: vel.x += 1
+        if KEYS.pressed(keys, "up"):    vel.y -= 1
+        if KEYS.pressed(keys, "down"):  vel.y += 1
+        if KEYS.pressed(keys, "left"):  vel.x -= 1
+        if KEYS.pressed(keys, "right"): vel.x += 1
+        if vel.length_squared() == 0 and self.analog.length_squared() > 0:
+            vel = pygame.Vector2(self.analog)
         if vel.length_squared() == 0:
             vel = pygame.Vector2(math.cos(self._angle), math.sin(self._angle))
         self._dash_vel         = vel.normalize() * PLAYER_DASH_SPEED
@@ -175,7 +184,7 @@ class Player:
 
     @property
     def max_dash_charges(self) -> int:
-        return PLAYER_DASH_CHARGES + self.perks.get("phase_drive", 0)
+        return PLAYER_DASH_CHARGES + self.perks.get("phase_drive", 0) + self.meta_dash
 
     @property
     def invulnerable(self) -> bool:
@@ -201,7 +210,9 @@ class Player:
 
         elif wi == 2 and cdl[2] <= 0:        # Chain Zap
             self._fire_chain(enemies)
-            cdl[2] = CHAIN_CD * self.fire_mult
+            oc = self.perks.get("overclock", 0)
+            arc_syn = oc >= 1 and self.perks.get("arc_lattice", 0) >= 1      # synergy: OVERCHARGED ARC
+            cdl[2] = CHAIN_CD * self.fire_mult * (0.75 ** oc if arc_syn else 1.0)
 
         elif wi == 3:                          # Null Beam (hold)
             self._fire_beam(dx, dy, enemies, dt)
@@ -218,19 +229,23 @@ class Player:
                         PLASMA_SPEED, PLASMA_DAMAGE, PLASMA_RANGE,
                         Projectile.TYPE_PLASMA)
         pr.pierce = self.perks.get("pierce", 0)
+        pr.homing = bool(self.perks.get("homing"))
         self.new_projectiles.append(pr)
 
     def _fire_spread(self, dx: float, dy: float) -> None:
         base_angle = math.atan2(dy, dx)
-        spread_rad = math.radians(SPREAD_ANGLE)
-        for i in range(SPREAD_COUNT):
-            t = i / (SPREAD_COUNT - 1) - 0.5 if SPREAD_COUNT > 1 else 0
+        bloom      = bool(self.perks.get("void_bloom"))             # evolution: 9 pellets, wider cone
+        count      = SPREAD_COUNT + (4 if bloom else 0)
+        spread_rad = math.radians(SPREAD_ANGLE + (12 if bloom else 0))
+        for i in range(count):
+            t = i / (count - 1) - 0.5 if count > 1 else 0
             a = base_angle + t * spread_rad
             pr = Projectile(self.pos.x, self.pos.y,
                             math.cos(a), math.sin(a),
                             SPREAD_SPEED, SPREAD_DAMAGE, 400,
                             Projectile.TYPE_SPREAD)
             pr.pierce = self.perks.get("pierce", 0)
+            pr.homing = bool(self.perks.get("homing"))
             self.new_projectiles.append(pr)
 
     def _fire_chain(self, enemies: list) -> None:
@@ -275,6 +290,7 @@ class Player:
         self.energy = min(self.max_energy, self.energy + amt)
         if self.energy >= self.max_energy and not self.chaos_mode:
             self.chaos_mode  = True
+            self.chaos_activations += 1
             self.chaos_timer = CHAOS_DURATION + 3.0 * self.perks.get("surge", 0)
             return True
         return False
@@ -337,5 +353,6 @@ class Player:
         if self.beam_active:
             bx = int(self.pos.x + math.cos(self._angle) * 500)
             by = int(self.pos.y + math.sin(self._angle) * 500)
-            pygame.draw.line(surf, (*WEAPON_COLORS[3], 80),  (cx, cy), (bx, by), 7)
-            pygame.draw.line(surf, (*WEAPON_COLORS[3], 180), (cx, cy), (bx, by), 3)
+            lance = bool(self.perks.get("null_lance"))
+            pygame.draw.line(surf, (*WEAPON_COLORS[3], 80),  (cx, cy), (bx, by), 12 if lance else 7)
+            pygame.draw.line(surf, (*WEAPON_COLORS[3], 180), (cx, cy), (bx, by), 5 if lance else 3)

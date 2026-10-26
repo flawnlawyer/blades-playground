@@ -163,6 +163,7 @@ class MusicEngine:
         self._chans:  dict[str, pygame.mixer.Channel] = {}
         self._level   = {k: 0.0 for k in LAYERS}
         self._playing = False
+        self.disabled = False          # set from the MUSIC setting
         try:
             if pygame.mixer.get_init():
                 if pygame.mixer.get_num_channels() < _BASE_CH + len(LAYERS):
@@ -174,7 +175,7 @@ class MusicEngine:
             self._sounds = {}
 
     def start(self) -> None:
-        if self._playing or not self._sounds:
+        if self._playing or not self._sounds or self.disabled:
             return
         for i, name in enumerate(LAYERS):
             ch = pygame.mixer.Channel(_BASE_CH + i)
