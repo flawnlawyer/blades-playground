@@ -18,7 +18,7 @@ from game.constants import (
 from utils.helpers import draw_panel
 
 
-_MENU_ITEMS = ["PLAY", "DAILY RUN", "HIGH SCORES", "SETTINGS", "QUIT"]
+_MENU_ITEMS = ["PLAY", "DAILY RUN", "ARMORY", "HIGH SCORES", "SETTINGS", "QUIT"]
 
 # Pre-baked vignette shared across re-entries
 _vignette_cache: pygame.Surface | None = None
@@ -109,6 +109,9 @@ class MenuState(BaseState):
         elif item == "DAILY RUN":
             from game.states.play_state import PlayState
             self.manager.switch(PlayState(self.manager, daily=True))
+        elif item == "ARMORY":
+            from game.states.armory_state import ArmoryState
+            self.manager.push(ArmoryState(self.manager))
         elif item == "HIGH SCORES":
             from game.states.highscores_state import HighScoresState
             self.manager.push(HighScoresState(self.manager))
@@ -199,13 +202,14 @@ class MenuState(BaseState):
 
         # Menu items — slide in from left
         menu_y = logo_bottom + 46
+        step = max(38, min(50, (H - 60 - menu_y) // len(_MENU_ITEMS)))   # shrink to fit as items are added
         self._item_rects = []
         for i, item in enumerate(_MENU_ITEMS):
             is_sel = (i == self._selected)
             x_off = self._item_offsets[i]
             ix = int(W // 2 - 120 + x_off)
-            iy = menu_y + i * 50
-            iw, ih = 240, 40
+            iy = menu_y + i * step
+            iw, ih = 240, min(40, step - 6)
             rect = pygame.Rect(ix, iy, iw, ih)
             self._item_rects.append(rect)
 

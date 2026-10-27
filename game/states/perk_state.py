@@ -12,6 +12,7 @@ from game.state_manager import BaseState
 from game.constants import LOGICAL_W as W, LOGICAL_H as H, WHITE, DIM
 from utils.helpers import draw_panel, alpha_rect
 from game.perk_icons import draw_perk_icon
+from game.perks import completing_synergies
 
 _CARD_W, _CARD_H, _GAP = 300, 250, 28
 _INPUT_LOCK = 0.4          # seconds
@@ -110,6 +111,10 @@ class PerkState(BaseState):
             draw_panel(surf, (r.x, r.y, r.w, r.h), bg_color=(14, 14, 30) if not sel else (22, 20, 40),
                        border_color=col if sel else (50, 50, 85), alpha=235, radius=8)
             owned = self._game.perks.get(perk.key, 0)
+            if perk.evolution:                                    # gold frame + tag for evolutions
+                pygame.draw.rect(surf, (255, 215, 90), (r.x, r.y, r.w, r.h), 2, border_radius=8)
+                tag = self._f_small.render("\u2605 EVOLUTION", True, (255, 215, 90))
+                surf.blit(tag, (r.centerx - tag.get_width() // 2, r.y + 12))
             key = self._f_small.render(f"[{i + 1}]", True, DIM)
             surf.blit(key, (r.x + 14, r.y + 12))
             if perk.max_stacks > 1:
@@ -119,6 +124,9 @@ class PerkState(BaseState):
             name = self._f_name.render(perk.name, True, WHITE if sel else col)
             surf.blit(name, (r.centerx - name.get_width() // 2, r.y + 124))
             self._wrapped(surf, perk.desc, r.x + 20, r.y + 160, r.w - 40, DIM if not sel else WHITE)
+            for k, syn in enumerate(completing_synergies(self._game.perks, perk.key)[:2]):
+                st = self._f_small.render(f"\u2605 SYNERGY: {syn.name}", True, syn.color)
+                surf.blit(st, (r.centerx - st.get_width() // 2, r.bottom - 30 + k * 13))
 
         hint = self._f_small.render("1 / 2 / 3 or click to choose    A / D + ENTER", True, (60, 60, 85))
         surf.blit(hint, (W // 2 - hint.get_width() // 2, self._rects[0].bottom + 30 if self._rects else H - 90))
