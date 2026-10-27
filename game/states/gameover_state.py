@@ -12,7 +12,8 @@ from game.constants import (
     WHITE, DIM, ENEMY_COL, ACCENT,
 )
 from utils.helpers import draw_panel
-from utils.data_manager import save_score, qualifies_for_leaderboard, record_daily
+from utils.data_manager import save_score, qualifies_for_leaderboard, record_daily, load_meta, save_meta
+from utils import meta as _meta
 from utils import daily as _daily
 
 
@@ -38,6 +39,7 @@ class GameOverState(BaseState):
         self._saved        = False
         self._daily_info   = []
         self._code         = ""
+        self._awarded      = False
 
         # Fonts
         self._font_title   = None
@@ -71,6 +73,12 @@ class GameOverState(BaseState):
                 self._code = _daily.share_code(date, self._final_score, self._final_wave)
                 self._daily_info = [f"DAILY RUN {date}   BEST TODAY: {best['score']}",
                                     f"SHARE CODE: {self._code}   (C = copy)"]
+            if not cheated and not self._game.stress_target and not self._awarded:
+                self._awarded = True                         # on_enter can run twice; bank the run once
+                m = load_meta(); res = _meta.award_run(m, self._game.run_stats()); save_meta(m)
+                self._daily_info.append(f"+{res['shards']} SHARDS   (TOTAL {res['total']})")
+                for _aid, name in res["achievements"]:
+                    self._daily_info.append(f"ACHIEVEMENT UNLOCKED: {name}  (+{_meta.ACHIEVEMENT_BONUS})")
 
     def handle_events(self, events: list) -> None:
         for ev in events:

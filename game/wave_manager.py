@@ -111,6 +111,7 @@ class WaveManager:
                     ("berserker", n // 3),
                     ("teleporter", n // 2),
                     ("shield_drone", 2 * (n // 3)),
+                    ("sniper", (n + 1) // 3),            # first appears on wave 7
                 ]
         for (etype, count) in defs:
             for _ in range(count):
