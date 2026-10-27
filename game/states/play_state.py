@@ -10,9 +10,12 @@ from __future__ import annotations
 import pygame
 
 from game.state_manager import BaseState
+from utils.keybinds import KEYS
 
 
 class PlayState(BaseState):
+    wants_raw_pad = True        # in-game the pad's A/X/LB/RB are actions, not menu keys
+
     def __init__(self, manager, daily: bool = False) -> None:
         super().__init__(manager)
         self._game = None
@@ -27,8 +30,13 @@ class PlayState(BaseState):
             from utils import daily as _daily
             seed = _daily.seed_for(_daily.today()) if self.daily else None
             self._game = Game(self.manager, seed=seed)
+            from utils import settings as _settings
+            _settings.apply_to_game(self._game, _settings.load())     # saved volume, bloom, shake, ...
             if self.daily:
                 self._game.daily_date = _daily.today()
+            elif not self._game.stress_target:                # permanent upgrades: normal runs only
+                from utils import meta as _meta, data_manager as _dm
+                _meta.apply_to_game(self._game, _dm.load_meta())
             self._game.stress_target = getattr(self.manager, "stress", 0)
         self._game.music.start()                    # idempotent; keeps playing through pause / perk screens
         self.manager.active_game = self._game       # lets console commands reach this run
@@ -67,19 +75,37 @@ class PlayState(BaseState):
                         self.manager.push(PauseState(self.manager, game))
                     return
 
-                if event.key == pygame.K_SPACE and not game.game_over:
+                if KEYS.matches(event.key, "hack") and not game.game_over:
                     game._do_hack()
 
-                if event.key == pygame.K_m:
+                if KEYS.matches(event.key, "mute"):
                     game.audio.toggle_mute()
 
                 if event.key == pygame.K_F3:
                     game.show_debug = not game.show_debug
 
-                if event.key in (pygame.K_LSHIFT, pygame.K_RSHIFT):
+                if KEYS.matches(event.key, "dash"):
                     if not game.game_over:
                         if game.player.trigger_dash(pygame.key.get_pressed()):
                             game.audio.dash()
+
+            elif event.type == getattr(pygame, "CONTROLLERBUTTONDOWN", -1) and not game.game_over:
+                self._pad_button(event.button, game)
+
+    def _pad_button(self, button: int, game) -> None:
+        """Gamepad actions: A dash, X hack, LB/RB (or D-pad left/right) prev/next weapon."""
+        P = pygame
+        if button == getattr(P, "CONTROLLER_BUTTON_A", -2):
+            if game.player.trigger_dash(P.key.get_pressed()):
+                game.audio.dash()
+        elif button == getattr(P, "CONTROLLER_BUTTON_X", -2):
+            game._do_hack()
+        elif button in (getattr(P, "CONTROLLER_BUTTON_RIGHTSHOULDER", -2),
+                        getattr(P, "CONTROLLER_BUTTON_DPAD_RIGHT", -2)):
+            game.player.weapon_index = (game.player.weapon_index + 1) % 5
+        elif button in (getattr(P, "CONTROLLER_BUTTON_LEFTSHOULDER", -2),
+                        getattr(P, "CONTROLLER_BUTTON_DPAD_LEFT", -2)):
+            game.player.weapon_index = (game.player.weapon_index - 1) % 5
 
     # ── Update ────────────────────────────────────────────────────────────────
 
@@ -89,7 +115,22 @@ class PlayState(BaseState):
 
         # Translate real mouse → logical coordinates
         # Use setattr to avoid strict type-checking on Game._logical_mouse
-        setattr(self._game, "_logical_mouse", self.manager.mouse_to_logical())
+        pad = getattr(self.manager, "gamepad", None)
+        if pad is None or not pad.aiming:
+            setattr(self._game, "_logical_mouse", self.manager.mouse_to_logical())
+        player = self._game.player
+        if pad is not None and pad.connected:
+            player.analog = pad.move_vector()
+            av = pad.aim_vector()
+            if av.length_squared() > 0.09:                 # right stick takes over aiming
+                pad.aiming = True
+                setattr(self._game, "_logical_mouse",
+                        (max(0, min(1280, player.pos.x + av.x * 240)),
+                         max(0, min(720,  player.pos.y + av.y * 240))))
+            self._game.pad_fire = pad.fire()
+        else:
+            player.analog = pygame.Vector2()
+            self._game.pad_fire = False
         clk = self.manager.clock
         self._game.debug_info = [f"FPS {clk.get_fps():5.1f}   frame {clk.get_time():3d} ms"]
         if not self._game.game_over and not self.manager.console.open:     # console pauses the run
