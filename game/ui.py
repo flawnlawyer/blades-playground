@@ -96,6 +96,13 @@ class UI:
             surf.blit(txt, (W - 16 - txt.get_width(), y))
             y += 14
 
+    def draw_synergies(self, surf: pygame.Surface, items: list, y: int) -> None:
+        """Active perk synergies in gold, under the perk list: [(name, color), ...]."""
+        for name, col in items:
+            txt = self.font_s.render(f"\u2605 {name}", True, col)
+            surf.blit(txt, (W - 16 - txt.get_width(), y + 4))
+            y += 14
+
     def _draw_hack_prompt(self, surf: pygame.Surface, player) -> None:
         if player.hack_cd > 0:
             txt = f"[SPACE] hack: {player.hack_cd:.1f}s"
