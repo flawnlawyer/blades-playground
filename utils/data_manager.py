@@ -85,6 +85,19 @@ def load_daily(date: str):
     return _ensure().get("daily", {}).get(date)
 
 
+# ── Progression (shards, upgrades, achievements) ──────────────────────────────
+
+def load_meta() -> dict:
+    from utils import meta
+    return meta.normalise(_ensure().get("meta"))
+
+
+def save_meta(m: dict) -> None:
+    data = _ensure()
+    data["meta"] = m
+    _write(data)
+
+
 # ── Settings ──────────────────────────────────────────────────────────────────
 
 def load_settings() -> dict:
