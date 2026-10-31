@@ -87,6 +87,8 @@ def main() -> None:
     manager = StateManager(screen, presenter)
     manager.logo = logo_surface
     manager.stress = _arg_int("--stress", 0)
+    from utils import settings as _settings
+    _settings.apply_global(manager, _settings.load())        # saved key bindings + gamepad options
     # Terminal control: same commands as the in-game console, typed in the launching terminal
     if "--no-terminal" not in sys.argv and ("--terminal" in sys.argv or (
             sys.stdin is not None and sys.stdin.isatty())):
