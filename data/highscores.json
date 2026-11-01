@@ -31,10 +31,10 @@
       "time": 35
     },
     {
-      "name": "3",
-      "score": 100,
+      "name": "bvb",
+      "score": 50,
       "wave": 1,
-      "time": 18
+      "time": 15
     },
     {
       "name": "12",
@@ -46,5 +46,26 @@
   "settings": {
     "volume": 0.2,
     "muted": false
+  },
+  "meta": {
+    "shards": 0,
+    "upgrades": {},
+    "weapons": [
+      0
+    ],
+    "perks": [],
+    "loadout": {
+      "weapon": 0,
+      "perk": null
+    },
+    "achievements": [],
+    "stats": {
+      "runs": 1,
+      "kills": 0,
+      "best_wave": 1,
+      "best_score": 50,
+      "bosses": 0,
+      "seconds": 15
+    }
   }
 }
