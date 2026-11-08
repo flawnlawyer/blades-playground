@@ -27,6 +27,7 @@ from game.entities     import (MehBlock, Fragment, Enemy, Hunter, SwarmNode, Pha
                                Projectile, Berserker, Teleporter, ShieldDrone, Splitter,
                                Prism, EnemyBullet, Sniper)
 from game.perks        import PERKS, SYNERGIES, roll_choices, active_synergies, meets
+from game.tuning       import TUNING
 from game.music        import MusicEngine
 from utils.helpers     import fade_ring
 from utils             import helpers as _helpers
@@ -136,6 +137,9 @@ class Game:
             self.enemies.append(Sniper(x, y))
         if len(self.enemies) > n0 and not self.stress_target:     # spawn-in: converging ring + brief grace
             e = self.enemies[-1]
+            late = max(0, self.wave_mgr.wave - TUNING["late_start"])
+            if late and TUNING["late_hp"] and etype != "shield_drone":      # drones stay 1-hit so the shield rule holds
+                e.hp = e.max_hp = e.hp * (1 + TUNING["late_hp"] * late)
             e.spawn_grace = 0.5
             self._ring(int(e.pos.x), int(e.pos.y), (255, 255, 255), 46, max(6, int(e.radius)), 0.45)
         elif etype == "boss":
@@ -479,13 +483,16 @@ class Game:
         for spawn in self.wave_mgr.spawn_queue:
             self._spawn_entity(spawn[0])
         if self.wave_mgr.wave_just_started:
-            self.ui.show_wave_banner(self.wave_mgr.wave, self.wave_mgr.is_boss_wave,
-                                     BOSS_NAMES[boss_kind(self.wave_mgr.wave)])
+            if not (self.wave_mgr.is_boss_wave and self._boss_intro > 0):      # the intro card already says it
+                self.ui.show_wave_banner(self.wave_mgr.wave, self.wave_mgr.is_boss_wave,
+                                         BOSS_NAMES[boss_kind(self.wave_mgr.wave)])
             if self.wave_mgr.is_boss_wave:
                 self.audio.boss_spawn()
             else:
                 self.audio.wave_start()
-        if self.wave_mgr.wave_just_cleared and not self.dying:
+        wv = self.wave_mgr.wave
+        offer = (wv % TUNING["perk_every"] == 0) or self.wave_mgr.is_boss_wave
+        if self.wave_mgr.wave_just_cleared and not self.dying and offer:
             prng = (random.Random(f"{self.seed}:perk:{self.wave_mgr.wave}")
                     if self.seed is not None else None)
             choices = roll_choices(self.perks, rng=prng)

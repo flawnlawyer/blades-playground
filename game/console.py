@@ -160,6 +160,25 @@ def _help(ctx, args):
     ctx.dim("* = cheat (flags the run, score is not saved).   help <command> for details.")
 
 
+@command("about", "", "Version, platform and file locations (handy for bug reports).", needs_game=False)
+def _about(ctx, args):
+    import platform
+    from game import __version__
+    from utils import data_manager, paths
+    logo = paths.resource_path("assets/logo.png")
+    ctx.info(f"The Blade's Playground v{__version__}   ({'packaged build' if paths.is_frozen() else 'running from source'})")
+    ctx.info(f"python {platform.python_version()}   pygame {pygame.version.ver}   SDL {'.'.join(map(str, pygame.get_sdl_version()))}   {platform.system()}")
+    ctx.info(f"save file : {data_manager.SAVE_FILE}   ({'exists' if data_manager.SAVE_FILE.exists() else 'not created yet'})")
+    ctx.info(f"logo asset: {logo}   ({'found' if logo.exists() else 'MISSING'})")
+    try:                                    # prove the save folder is writable without touching real saves
+        probe = data_manager.DATA_DIR / ".write_test"
+        data_manager.DATA_DIR.mkdir(parents=True, exist_ok=True)
+        probe.write_text("ok"); probe.unlink()
+        ctx.info("save folder: writable")
+    except OSError as exc:
+        ctx.console.print(f"save folder: NOT writable ({exc})", "err")
+
+
 @command("clear", "", "Clear the console log.", needs_game=False, aliases=("cls",))
 def _clear(ctx, args):
     ctx.console.lines.clear()
