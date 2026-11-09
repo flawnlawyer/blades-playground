@@ -5,6 +5,7 @@ from __future__ import annotations
 import pygame
 
 from game.constants import WAVE_BREAK_DURATION
+from game.tuning import TUNING
 
 
 # Wave definitions: list of (enemy_type_str, count) per wave
@@ -113,8 +114,10 @@ class WaveManager:
                     ("shield_drone", 2 * (n // 3)),
                     ("sniper", (n + 1) // 3),            # first appears on wave 7
                 ]
+        late = max(0, self.wave - TUNING["late_start"])
+        mult = 1.0 + TUNING["late_count"] * late if not self.is_boss_wave else 1.0
         for (etype, count) in defs:
-            for _ in range(count):
+            for _ in range(int(round(count * mult)) if etype != "boss" else count):
                 spawns.append((etype,))
         return spawns
 
