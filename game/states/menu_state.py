@@ -240,7 +240,8 @@ class MenuState(BaseState):
             "W/S Navigate   ENTER Select   F11 Fullscreen   ESC Quit",
             True, (50, 50, 70))
         surf.blit(hint, (W // 2 - hint.get_width() // 2, H - 28))
-        ver = self._font_small.render("v1.0.0", True, (40, 40, 60))
+        from game import __version__
+        ver = self._font_small.render(f"v{__version__}", True, (40, 40, 60))
         surf.blit(ver, (W - 62, H - 18))
 
         # Pre-baked vignette
