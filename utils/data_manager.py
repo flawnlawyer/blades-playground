@@ -6,7 +6,9 @@ Uses a local JSON file. Auto-creates on first run.
 import json
 from pathlib import Path
 
-DATA_DIR  = Path(__file__).parent.parent / "data"
+from utils.paths import user_data_dir
+
+DATA_DIR  = user_data_dir()          # <project>/data from source; per-user folder when packaged
 SAVE_FILE = DATA_DIR / "highscores.json"
 
 DEFAULT_DATA: dict = {
@@ -19,7 +21,7 @@ DEFAULT_DATA: dict = {
 
 
 def _ensure() -> dict:
-    DATA_DIR.mkdir(exist_ok=True)
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
     if not SAVE_FILE.exists():
         _write(DEFAULT_DATA)
     try:
@@ -30,7 +32,7 @@ def _ensure() -> dict:
 
 
 def _write(data: dict) -> None:
-    DATA_DIR.mkdir(exist_ok=True)
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
     with open(SAVE_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
 
