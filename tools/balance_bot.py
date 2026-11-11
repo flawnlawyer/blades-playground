@@ -24,6 +24,7 @@ from game.constants import W, H, CHAIN_RANGE, BOMB_RADIUS, PLASMA_RANGE
 from game.entities import ShieldDrone, Sniper
 from game.game import Game
 from game.perks import PERKS, roll_choices
+from game.tuning import TUNING
 from utils.keybinds import KEYS
 
 # skill profile: (think-every-N-frames, chance to miss a dash/hack, dodge radius px)
@@ -185,7 +186,7 @@ def run_one(seed: int, skill: str = "average", max_seconds: float = 240.0,
         if g.perk_pending:
             g.perk_pending = False
             ch = roll_choices(g.perks, rng=random.Random(f"perk:{seed}:{g.wave_mgr.wave}"))
-            if ch:
+            if ch and perk_policy != "none":
                 g.grant_perk((rng.choice(ch) if perk_policy == "random" else ch[0]).key)
         g.update(dt)
     return {"seed": seed, "skill": skill, "wave": g.wave_mgr.wave, "seconds": round(g.run_time, 1),
@@ -207,9 +208,16 @@ def main() -> None:
     ap.add_argument("--seconds", type=float, default=240.0, help="game-time cap per run")
     ap.add_argument("--out", default="balance_results.csv")
     ap.add_argument("--seed0", type=int, default=1000)
+    ap.add_argument("--policy", choices=["random", "none", "first"], default="random",
+                    help="how perk offers are handled: random pick, never pick (base-game difficulty), or always first")
+    ap.add_argument("--tune", nargs="*", default=[], help="override tuning knobs, e.g. perk_every=2 late_hp=0.08")
+    ap.add_argument("--skip-baseline", action="store_true", help="with --only: do not re-run the baseline condition")
+    ap.add_argument("--resume", action="store_true", help="skip (condition, seed) pairs already present in --out")
     ap.add_argument("--perk-test", action="store_true", help="paired experiment: start each run with one perk")
     ap.add_argument("--only", default="", help="comma list of conditions to run (perk-test)")
     a = ap.parse_args()
+    for kv in a.tune:
+        k, v = kv.split("="); TUNING[k] = type(TUNING[k])(float(v))
 
     conditions: list[tuple[str, dict]] = [("baseline", {})]
     if a.perk_test:
@@ -222,7 +230,11 @@ def main() -> None:
                 conditions.append((k, {k: 1}))
     if a.only:
         wanted = set(a.only.split(","))
-        conditions = [c for c in conditions if c[0] in wanted or c[0] == "baseline"]
+        conditions = [c for c in conditions if c[0] in wanted or (c[0] == "baseline" and not a.skip_baseline)]
+    done = set()
+    if a.resume and os.path.exists(a.out):
+        with open(a.out) as fh:
+            done = {(r["condition"], int(r["seed"])) for r in csv.DictReader(fh)}
     new = not os.path.exists(a.out)
     with open(a.out, "a", newline="") as fh:
         w = csv.DictWriter(fh, FIELDS)
@@ -230,7 +242,9 @@ def main() -> None:
             w.writeheader()
         for name, perks in (conditions if a.perk_test else [("baseline", {})]):
             for i in range(a.runs):
-                row = run_one(a.seed0 + i, a.skill, a.seconds, perks)
+                if (name, a.seed0 + i) in done:
+                    continue
+                row = run_one(a.seed0 + i, a.skill, a.seconds, perks, a.policy)
                 row["condition"] = name
                 w.writerow(row); fh.flush()
                 print(f"{name:28s} seed {row['seed']} wave {row['wave']:2d} {row['seconds']:6.1f}s "

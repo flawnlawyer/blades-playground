@@ -68,7 +68,8 @@ def main() -> None:
 
     # Window icon
     logo_surface = None
-    logo_path = Path(__file__).parent / "assets" / "logo.png"
+    from utils.paths import resource_path
+    logo_path = resource_path("assets/logo.png")          # works from source and inside a packaged build
     if logo_path.exists():
         try:
             logo_surface = pygame.image.load(str(logo_path))
