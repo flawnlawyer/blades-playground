@@ -406,3 +406,71 @@ class SniperTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PerkCadence(unittest.TestCase):
+    """Balance change: perks are offered every 2nd cleared wave, plus every boss wave."""
+    def offered(self, wave):
+        g = fresh_game(); g.enemies.clear()
+        g.wave_mgr._state = "active"; g.wave_mgr.wave = wave; g.wave_mgr._break_timer = 0
+        g.wave_mgr._all_dead_timer = 1.19; g.wave_mgr._pending_spawns = []
+        g.update(0.05); return g.perk_pending
+
+    def test_cadence(self):
+        from game.tuning import TUNING
+        self.assertEqual(TUNING["perk_every"], 2)
+        self.assertEqual([w for w in range(1, 13) if self.offered(w)], [2, 4, 5, 6, 8, 10, 12])   # 5 & 10 = boss waves
+
+    def test_every_boss_wave_always_offers_a_perk_even_when_odd(self):
+        for w in (5, 15, 25):
+            self.assertTrue(self.offered(w), w)
+
+    def test_late_hp_scaling_applies_to_regular_enemies_only(self):
+        from game.tuning import TUNING
+        old = dict(TUNING)
+        try:
+            TUNING["late_hp"] = 0.10; TUNING["late_start"] = 8
+            g = fresh_game(); g.wave_mgr.wave = 18                      # 10 waves past the start -> x2.0
+            g._spawn_entity("hunter", 100.0, 100.0); self.assertAlmostEqual(g.enemies[-1].hp, 2 * 2.0)
+            self.assertAlmostEqual(g.enemies[-1].max_hp, 2 * 2.0)
+            g._spawn_entity("shield_drone", 150.0, 100.0); self.assertEqual(g.enemies[-1].hp, 1)   # drones stay 1-hit
+            g.wave_mgr.wave = 5; g._spawn_entity("hunter", 100.0, 150.0); self.assertEqual(g.enemies[-1].hp, 2)
+        finally:
+            TUNING.clear(); TUNING.update(old)
+
+    def test_late_count_scaling_adds_enemies_but_never_bosses(self):
+        from game.tuning import TUNING
+        old = dict(TUNING)
+        def count(wave, etype=None):
+            wm = WaveManager(); wm.wave = wave
+            return sum(1 for sp in wm._build_spawn_list() if etype is None or sp[0] == etype)
+        try:
+            base_regular, base_boss_wave = count(16), count(15)
+            TUNING["late_count"] = 0.5; TUNING["late_start"] = 8
+            self.assertGreater(count(16), base_regular * 1.5)
+            self.assertEqual(count(15), base_boss_wave)                   # boss waves unchanged
+            self.assertEqual(count(15, "boss"), 1)
+            TUNING["late_count"] = 0.0
+            self.assertEqual(count(16), base_regular)                     # knob off -> exactly the old schedule
+        finally:
+            TUNING.clear(); TUNING.update(old)
+
+
+class BossWaveAnnouncements(unittest.TestCase):
+    def start_wave(self, wave, stress=0):
+        g = fresh_game(); g.stress_target = stress
+        g.wave_mgr._state = "break"; g.wave_mgr.wave = wave - 1; g.wave_mgr._break_timer = 0.0
+        g.update(1 / 60); return g
+
+    def test_boss_wave_shows_the_intro_card_but_not_a_duplicate_banner(self):
+        g = self.start_wave(10)
+        self.assertGreater(g._boss_intro, 0); self.assertIsNotNone(g.boss)
+        self.assertLessEqual(g.ui._wave_banner_timer, 0)
+
+    def test_regular_waves_still_show_their_banner(self):
+        g = self.start_wave(4)
+        self.assertGreater(g.ui._wave_banner_timer, 0); self.assertIn("WAVE 4", g.ui._wave_banner_text)
+
+    def test_stress_mode_has_no_intro_so_it_keeps_the_banner(self):
+        g = self.start_wave(10, stress=5)
+        self.assertEqual(g._boss_intro, 0)

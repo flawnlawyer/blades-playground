@@ -270,7 +270,7 @@ class PerkTests(unittest.TestCase):
 
     def test_clearing_a_wave_offers_perks(self):
         g = fresh_game()
-        g.wave_mgr._state = "active"; g.wave_mgr.wave = 1; g.wave_mgr._break_timer = 0
+        g.wave_mgr._state = "active"; g.wave_mgr.wave = 2; g.wave_mgr._break_timer = 0     # perks come every 2nd wave
         g.wave_mgr._all_dead_timer = 1.19; g.wave_mgr._pending_spawns = []
         g.update(0.05)
         self.assertTrue(g.perk_pending); self.assertEqual(len(g.perk_choices), 3)

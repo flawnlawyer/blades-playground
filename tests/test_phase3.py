@@ -296,7 +296,7 @@ class DailyTests(unittest.TestCase):
     def test_same_seed_same_perk_offers(self):
         def offers(seed):
             g = Game(None, seed=seed); g.enemies.clear()
-            g.wave_mgr._state = "active"; g.wave_mgr.wave = 3; g.wave_mgr._break_timer = 0
+            g.wave_mgr._state = "active"; g.wave_mgr.wave = 4; g.wave_mgr._break_timer = 0
             g.wave_mgr._all_dead_timer = 1.19; g.wave_mgr._pending_spawns = []
             g.update(0.05)
             return [p.key for p in g.perk_choices]
