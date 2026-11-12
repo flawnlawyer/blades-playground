@@ -1,0 +1,31 @@
+condition,seed,skill,wave,seconds,score,kills,hits,bosses,died,cause,perks,wall
+baseline,1000,skilled,21,330.0,68613,653,5,THE ARCHITECT|THE PRISM|THE ARCHITECT|THE PRISM,0,Enemy,surgex1|second_windx1|arc_latticex2|salvagex1|overclockx1|repairx2|piercex3|volatilex1,1.6
+baseline,1001,skilled,21,330.0,83083,750,3,THE ARCHITECT|THE PRISM|THE ARCHITECT|THE PRISM,0,Teleporter,volatilex2|arc_latticex1|clusterx1|salvagex1|piercex2|repairx1|second_windx1|phase_drivex1|overclockx2,1.6
+baseline,1002,skilled,24,330.0,115767,1021,1,THE ARCHITECT|THE PRISM|THE ARCHITECT|THE PRISM,0,Teleporter,piercex1|surgex2|overclockx2|arc_latticex2|homingx1|second_windx1|volatilex2|clusterx1|repairx1,2.2
+baseline,1003,skilled,20,330.0,70314,643,4,THE ARCHITECT|THE PRISM|THE ARCHITECT,0,Teleporter,arc_latticex1|overclockx1|second_windx1|salvagex3|repairx1|volatilex2|piercex1|clusterx1,1.7
+baseline,1004,skilled,23,330.0,108325,960,2,THE ARCHITECT|THE PRISM|THE ARCHITECT|THE PRISM,0,SwarmNode,surgex1|overclockx3|void_bloomx1|second_windx1|volatilex2|repairx2|salvagex2|arc_latticex1,2.1
+baseline,1005,skilled,22,330.0,96472,854,4,THE ARCHITECT|THE PRISM|THE ARCHITECT|THE PRISM,0,Hunter,volatilex1|clusterx1|arc_latticex2|piercex1|overclockx3|repairx2|homingx1|second_windx1|surgex1,2.0
+baseline,1006,skilled,17,266.9,39013,388,4,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Teleporter,piercex2|phase_drivex2|salvagex2|arc_latticex2|second_windx1|overclockx1,1.0
+baseline,1007,skilled,20,330.0,73018,655,2,THE ARCHITECT|THE PRISM|THE ARCHITECT,0,bullet,repairx1|volatilex2|surgex1|overclockx2|clusterx1|second_windx1|arc_latticex1|piercex2,1.7
+baseline,1008,skilled,20,330.0,67539,650,7,THE ARCHITECT|THE PRISM|THE ARCHITECT,0,Berserker,second_windx1|phase_drivex2|volatilex1|surgex2|salvagex1|arc_latticex1|repairx1|clusterx1|piercex1,1.6
+baseline,1009,skilled,22,330.0,96370,844,0,THE ARCHITECT|THE PRISM|THE ARCHITECT|THE PRISM,0,survived,overclockx3|second_windx1|salvagex1|piercex2|repairx1|arc_latticex1|volatilex1|phase_drivex1|void_bloomx1,1.7
+baseline,1010,skilled,21,330.0,83759,749,1,THE ARCHITECT|THE PRISM|THE ARCHITECT|THE PRISM,0,ShieldDrone,overclockx2|surgex2|second_windx1|volatilex1|salvagex2|repairx1|phase_drivex1|void_bloomx1|clusterx1,1.5
+baseline,1011,skilled,14,177.5,25137,268,3,THE ARCHITECT|THE PRISM,1,SwarmNode,arc_latticex2|overclockx2|teslax1|volatilex1|salvagex1,0.6
+baseline,1012,skilled,19,330.0,69467,634,5,THE ARCHITECT|THE PRISM|THE ARCHITECT,0,bullet,repairx1|phase_drivex2|salvagex1|surgex3|piercex2|arc_latticex1|second_windx1,1.4
+baseline,1013,skilled,20,330.0,70421,645,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,0,Phantom,second_windx1|volatilex1|arc_latticex2|repairx1|surgex1|clusterx1|overclockx3|piercex1,1.7
+baseline,1014,skilled,22,330.0,97435,861,1,THE ARCHITECT|THE PRISM|THE ARCHITECT|THE PRISM,0,Enemy,second_windx1|overclockx3|phase_drivex1|piercex2|homingx1|arc_latticex3|volatilex2,2.0
+baseline,1015,skilled,22,330.0,97417,855,1,THE ARCHITECT|THE PRISM|THE ARCHITECT|THE PRISM,0,Enemy,salvagex3|overclockx1|volatilex2|piercex1|phase_drivex2|second_windx1|surgex1|repairx1,1.6
+baseline,1016,skilled,19,330.0,70312,637,1,THE ARCHITECT|THE PRISM|THE ARCHITECT,0,Enemy,volatilex2|arc_latticex2|clusterx1|repairx2|phase_drivex1|surgex1|overclockx1|salvagex1,1.3
+baseline,1017,skilled,21,330.0,76887,703,3,THE ARCHITECT|THE PRISM|THE ARCHITECT|THE PRISM,0,Splitter,repairx3|second_windx1|surgex1|salvagex1|null_lancex1|volatilex2|overclockx1|piercex1|phase_drivex1,1.3
+baseline,1018,skilled,19,330.0,65443,607,7,THE ARCHITECT|THE PRISM|THE ARCHITECT,0,SwarmNode,salvagex2|arc_latticex3|phase_drivex2|surgex1|second_windx1|repairx1|piercex1,1.5
+baseline,1019,skilled,14,229.3,25374,285,10,THE ARCHITECT|THE PRISM,1,SwarmNode,salvagex1|arc_latticex2|repairx2|piercex1|phase_drivex1,1.0
+baseline,1020,skilled,21,330.0,83703,741,0,THE ARCHITECT|THE PRISM|THE ARCHITECT|THE PRISM,0,survived,repairx2|salvagex1|second_windx1|piercex3|overclockx2|homingx1|volatilex2,2.0
+baseline,1021,skilled,21,330.0,83391,738,1,THE ARCHITECT|THE PRISM|THE ARCHITECT|THE PRISM,0,bullet,salvagex1|overclockx2|volatilex2|surgex3|void_bloomx1|piercex2|repairx1,1.9
+baseline,1022,skilled,20,330.0,69575,648,2,THE ARCHITECT|THE PRISM|THE ARCHITECT,0,Teleporter,arc_latticex1|salvagex1|piercex1|volatilex2|second_windx1|phase_drivex2|overclockx2|surgex1,1.6
+baseline,1023,skilled,13,193.9,18938,203,4,THE ARCHITECT|THE PRISM,1,Splitter,phase_drivex1|arc_latticex3|second_windx1|teslax1|piercex1,0.6
+baseline,1024,skilled,21,330.0,83942,750,3,THE ARCHITECT|THE PRISM|THE ARCHITECT|THE PRISM,0,Phantom,phase_drivex1|surgex1|second_windx1|arc_latticex2|piercex3|salvagex2|overclockx1|volatilex1,1.4
+baseline,1025,skilled,21,330.0,81764,745,4,THE ARCHITECT|THE PRISM|THE ARCHITECT|THE PRISM,0,Teleporter,phase_drivex2|overclockx2|surgex2|repairx1|salvagex2|void_bloomx1|volatilex1|clusterx1,1.5
+baseline,1026,skilled,22,330.0,96478,850,1,THE ARCHITECT|THE PRISM|THE ARCHITECT|THE PRISM,0,SwarmNode,salvagex3|piercex2|second_windx1|volatilex2|surgex1|clusterx1|phase_drivex1|null_lancex1,1.3
+baseline,1027,skilled,18,301.8,46315,506,14,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Enemy,salvagex3|repairx3|piercex1|overclockx1|arc_latticex1|phase_drivex1,1.2
+baseline,1028,skilled,22,330.0,97252,857,2,THE ARCHITECT|THE PRISM|THE ARCHITECT|THE PRISM,0,Hunter,overclockx3|arc_latticex2|piercex2|repairx2|surgex2|volatilex1,1.4
+baseline,1029,skilled,20,330.0,71115,648,2,THE ARCHITECT|THE PRISM|THE ARCHITECT,0,Teleporter,overclockx2|second_windx1|phase_drivex1|surgex2|piercex3|volatilex1|salvagex1,1.2

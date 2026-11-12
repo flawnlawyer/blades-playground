@@ -1,12 +1,7 @@
 # Python
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
-*.egg
 *.egg-info/
-dist/
-build/
 .eggs/
 *.whl
 
@@ -16,25 +11,27 @@ venv/
 env/
 ENV/
 
-# IDE
+# IDE / OS
 .vscode/
 .idea/
 *.swp
-*.swo
 .DS_Store
+Thumbs.db
 
-# pygame / runtime
+# Runtime
 *.log
+balance_results*.csv
 
-#local test
-highscores.json"main.dist/" 
-"main.build/" 
+# Local save data (kept out of the repo; packaged builds use the per-user folder)
+data/highscores.json
 
-# distribution
-
-main.dist/
+# Builds
+build/
+dist/
 main.build/
-"*.exe" 
+main.dist/
 main.exe
-
+*.exe
 CHANGELOG.md
+RELEASE_NOTES.md
+RELEASE.md

@@ -7,13 +7,14 @@ Run the game from a terminal and the **same commands** work typed into that term
 
 ## Cheats never touch your real scores
 
-Any command marked **cheat** flags the run as *cheated*: an on-screen tag appears and the run is **never written** to the high-score table or the daily board. Visual, audio and info commands do not flag the run.
+Any command marked **cheat** flags the run as *cheated*: an on-screen tag appears and the run is **never written** to the high-score table, the daily board, or your progression (no shards, no achievements). Visual, audio and info commands do not flag the run.
 (`set`/`get` flag the run only when you change `game`, `player` or `wave` values.)
 
 ## System
 
 | Command | What it does |
 |---|---|
+| `about ` | Version, platform and file locations (handy for bug reports). |
 | `clear ` | Clear the console log. _(alias: cls)_ |
 | `debug [on|off]` | FPS / entity-count overlay (same as F3). |
 | `echo <text>` | Print text. |
@@ -102,4 +103,5 @@ bloom 1.2
 theme 3
 set player.speed_mult 1.5
 get wave
+about
 ```

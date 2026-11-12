@@ -1,0 +1,501 @@
+condition,seed,skill,wave,seconds,score,kills,hits,bosses,died,cause,perks,wall
+baseline,1000,average,13,205.7,21549,230,3,THE ARCHITECT|THE PRISM,1,Teleporter,,0.7
+baseline,1001,average,11,125.2,10559,115,3,THE ARCHITECT|THE PRISM,1,Hunter,,0.3
+baseline,1002,average,9,105.9,6860,82,3,THE ARCHITECT,1,Hunter,,0.2
+baseline,1003,average,13,198.8,20310,205,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.7
+baseline,1004,average,12,177.5,15348,160,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.4
+baseline,1005,average,13,196.9,20307,224,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.5
+baseline,1006,average,9,108.0,6538,83,3,THE ARCHITECT,1,Hunter,,0.2
+baseline,1007,average,12,179.3,14906,160,3,THE ARCHITECT|THE PRISM,1,Hunter,,0.4
+baseline,1008,average,11,134.2,9933,112,3,THE ARCHITECT|THE PRISM,1,Enemy,,0.4
+baseline,1009,average,11,147.8,10619,112,3,THE ARCHITECT|THE PRISM,1,Hunter,,0.3
+baseline,1010,average,14,202.6,29218,281,3,THE ARCHITECT|THE PRISM,1,Enemy,,0.6
+baseline,1011,average,9,104.7,6955,82,3,THE ARCHITECT,1,Enemy,,0.2
+baseline,1012,average,10,135.1,8496,107,3,THE ARCHITECT,1,bullet,,0.3
+baseline,1013,average,14,233.4,28399,280,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.6
+baseline,1014,average,12,151.8,14194,159,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.4
+baseline,1015,average,12,149.5,15945,169,3,THE ARCHITECT|THE PRISM,1,Teleporter,,0.4
+baseline,1016,average,10,120.0,8715,104,3,THE ARCHITECT,1,bullet,,0.3
+baseline,1017,average,13,199.9,20381,213,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.6
+baseline,1018,average,9,108.8,6518,82,3,THE ARCHITECT,1,SwarmNode,,0.3
+baseline,1019,average,13,172.1,18820,204,3,THE ARCHITECT|THE PRISM,1,Hunter,,0.6
+baseline,1020,average,11,157.9,12776,138,3,THE ARCHITECT|THE PRISM,1,Phantom,,0.4
+baseline,1021,average,11,154.2,10990,122,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.4
+baseline,1022,average,11,168.0,10918,124,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.4
+baseline,1023,average,13,178.7,19197,195,3,THE ARCHITECT|THE PRISM,1,Hunter,,0.4
+baseline,1024,average,11,156.6,11384,124,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.4
+overclock,1000,average,9,97.7,6632,84,3,THE ARCHITECT,1,SwarmNode,overclockx1,0.2
+overclock,1001,average,12,164.7,16271,182,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx1,0.4
+overclock,1002,average,13,197.8,22334,229,3,THE ARCHITECT|THE PRISM,1,Teleporter,overclockx1,0.5
+overclock,1003,average,11,139.6,11621,135,3,THE ARCHITECT|THE PRISM,1,Hunter,overclockx1,0.4
+overclock,1004,average,13,176.1,21287,213,3,THE ARCHITECT|THE PRISM,1,Enemy,overclockx1,0.4
+overclock,1005,average,14,216.5,28619,291,3,THE ARCHITECT|THE PRISM,1,Berserker,overclockx1,0.7
+overclock,1006,average,14,220.8,27349,283,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx1,0.7
+overclock,1007,average,12,138.2,14719,165,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx1,0.4
+overclock,1008,average,11,139.0,11081,121,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx1,0.3
+overclock,1009,average,12,141.4,15175,160,3,THE ARCHITECT|THE PRISM,1,Splitter,overclockx1,0.4
+overclock,1010,average,12,155.4,14040,157,3,THE ARCHITECT|THE PRISM,1,Enemy,overclockx1,0.4
+overclock,1011,average,10,134.7,9216,106,3,THE ARCHITECT,1,bullet,overclockx1,0.3
+overclock,1012,average,13,175.8,19117,207,3,THE ARCHITECT|THE PRISM,1,Hunter,overclockx1,0.6
+overclock,1013,average,12,173.6,14055,158,3,THE ARCHITECT|THE PRISM,1,Enemy,overclockx1,0.5
+overclock,1014,average,14,186.6,27781,275,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx1,0.6
+overclock,1015,average,13,183.7,22114,228,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx1,0.6
+overclock,1016,average,13,185.9,21383,218,3,THE ARCHITECT|THE PRISM,1,Teleporter,overclockx1,0.5
+overclock,1017,average,14,228.6,27976,278,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx1,0.7
+overclock,1018,average,13,199.9,22454,227,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx1,0.6
+overclock,1019,average,12,164.7,17099,179,3,THE ARCHITECT|THE PRISM,1,Enemy,overclockx1,0.5
+overclock,1020,average,16,283.3,32667,327,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,overclockx1,0.8
+overclock,1021,average,13,184.7,20143,214,3,THE ARCHITECT|THE PRISM,1,Phantom,overclockx1,0.5
+overclock,1022,average,11,133.1,10480,123,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx1,0.3
+overclock,1023,average,16,242.6,34062,330,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Enemy,overclockx1,0.8
+overclock,1024,average,16,238.9,32691,326,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,overclockx1,0.7
+pierce,1000,average,10,124.7,9720,108,3,THE ARCHITECT,1,bullet,piercex1,0.3
+pierce,1001,average,11,161.8,9945,117,3,THE ARCHITECT|THE PRISM,1,Enemy,piercex1,0.4
+pierce,1002,average,12,182.2,16102,179,3,THE ARCHITECT|THE PRISM,1,Enemy,piercex1,0.5
+pierce,1003,average,13,196.6,20469,225,3,THE ARCHITECT|THE PRISM,1,Teleporter,piercex1,0.6
+pierce,1004,average,13,198.9,20095,213,3,THE ARCHITECT|THE PRISM,1,Hunter,piercex1,0.5
+pierce,1005,average,13,187.8,20134,202,3,THE ARCHITECT|THE PRISM,1,Hunter,piercex1,0.5
+pierce,1006,average,13,193.3,22235,231,3,THE ARCHITECT|THE PRISM,1,SwarmNode,piercex1,0.7
+pierce,1007,average,10,128.9,9398,108,3,THE ARCHITECT,1,bullet,piercex1,0.4
+pierce,1008,average,12,155.3,15017,162,3,THE ARCHITECT|THE PRISM,1,Teleporter,piercex1,0.4
+pierce,1009,average,16,256.1,33378,327,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Enemy,piercex1,0.8
+pierce,1010,average,14,236.2,25428,257,3,THE ARCHITECT|THE PRISM,1,Hunter,piercex1,0.6
+pierce,1011,average,14,214.2,26048,262,3,THE ARCHITECT|THE PRISM,1,Teleporter,piercex1,0.6
+pierce,1012,average,14,211.2,29056,282,3,THE ARCHITECT|THE PRISM,1,Enemy,piercex1,0.6
+pierce,1013,average,12,167.5,15702,175,3,THE ARCHITECT|THE PRISM,1,SwarmNode,piercex1,0.4
+pierce,1014,average,13,183.5,22688,230,3,THE ARCHITECT|THE PRISM,1,Phantom,piercex1,0.5
+pierce,1015,average,12,167.9,15547,171,3,THE ARCHITECT|THE PRISM,1,Phantom,piercex1,0.4
+pierce,1016,average,11,135.2,10626,116,3,THE ARCHITECT|THE PRISM,1,Hunter,piercex1,0.3
+pierce,1017,average,13,194.6,20904,216,3,THE ARCHITECT|THE PRISM,1,Teleporter,piercex1,0.6
+pierce,1018,average,12,172.6,15749,178,3,THE ARCHITECT|THE PRISM,1,Phantom,piercex1,0.5
+pierce,1019,average,14,212.6,26864,269,3,THE ARCHITECT|THE PRISM,1,SwarmNode,piercex1,0.7
+pierce,1020,average,12,161.6,15065,173,3,THE ARCHITECT|THE PRISM,1,Phantom,piercex1,0.4
+pierce,1021,average,12,163.1,15967,161,3,THE ARCHITECT|THE PRISM,1,Hunter,piercex1,0.5
+pierce,1022,average,12,160.2,14885,165,3,THE ARCHITECT|THE PRISM,1,Hunter,piercex1,0.4
+pierce,1023,average,11,158.4,10051,116,3,THE ARCHITECT|THE PRISM,1,SwarmNode,piercex1,0.4
+pierce,1024,average,13,204.9,20011,216,3,THE ARCHITECT|THE PRISM,1,ShieldDrone,piercex1,0.5
+arc_lattice,1000,average,14,219.4,26171,264,3,THE ARCHITECT|THE PRISM,1,Splitter,arc_latticex1,0.6
+arc_lattice,1001,average,11,125.2,10559,115,3,THE ARCHITECT|THE PRISM,1,Hunter,arc_latticex1,0.3
+arc_lattice,1002,average,11,147.2,9507,111,3,THE ARCHITECT|THE PRISM,1,ShieldDrone,arc_latticex1,0.4
+arc_lattice,1003,average,12,180.1,16101,175,3,THE ARCHITECT|THE PRISM,1,SwarmNode,arc_latticex1,0.5
+arc_lattice,1004,average,12,188.5,15844,170,3,THE ARCHITECT|THE PRISM,1,Enemy,arc_latticex1,0.5
+arc_lattice,1005,average,13,196.9,20307,224,3,THE ARCHITECT|THE PRISM,1,SwarmNode,arc_latticex1,0.5
+arc_lattice,1006,average,9,108.0,6538,83,3,THE ARCHITECT,1,Hunter,arc_latticex1,0.3
+arc_lattice,1007,average,10,136.3,8949,107,3,THE ARCHITECT,1,bullet,arc_latticex1,0.3
+arc_lattice,1008,average,12,182.2,16330,172,3,THE ARCHITECT|THE PRISM,1,SwarmNode,arc_latticex1,0.5
+arc_lattice,1009,average,9,130.4,8157,98,3,THE ARCHITECT,1,bullet,arc_latticex1,0.3
+arc_lattice,1010,average,12,155.4,14098,155,3,THE ARCHITECT|THE PRISM,1,Hunter,arc_latticex1,0.4
+arc_lattice,1011,average,9,102.5,7345,85,3,THE ARCHITECT,1,Enemy,arc_latticex1,0.2
+arc_lattice,1012,average,14,219.8,24235,252,3,THE ARCHITECT|THE PRISM,1,Hunter,arc_latticex1,0.6
+arc_lattice,1013,average,14,233.4,28399,280,3,THE ARCHITECT|THE PRISM,1,SwarmNode,arc_latticex1,0.6
+arc_lattice,1014,average,10,114.1,8311,104,3,THE ARCHITECT,1,SwarmNode,arc_latticex1,0.3
+arc_lattice,1015,average,12,149.0,16075,171,3,THE ARCHITECT|THE PRISM,1,SwarmNode,arc_latticex1,0.4
+arc_lattice,1016,average,10,120.0,8715,104,3,THE ARCHITECT,1,bullet,arc_latticex1,0.3
+arc_lattice,1017,average,13,202.4,20908,216,3,THE ARCHITECT|THE PRISM,1,Hunter,arc_latticex1,0.5
+arc_lattice,1018,average,9,108.8,6518,82,3,THE ARCHITECT,1,SwarmNode,arc_latticex1,0.3
+arc_lattice,1019,average,13,168.3,19499,212,3,THE ARCHITECT|THE PRISM,1,Enemy,arc_latticex1,0.5
+arc_lattice,1020,average,11,157.9,12776,138,3,THE ARCHITECT|THE PRISM,1,Phantom,arc_latticex1,0.4
+arc_lattice,1021,average,9,111.5,7109,89,3,THE ARCHITECT,1,SwarmNode,arc_latticex1,0.3
+arc_lattice,1022,average,12,184.2,15111,162,3,THE ARCHITECT|THE PRISM,1,Teleporter,arc_latticex1,0.4
+arc_lattice,1023,average,11,146.3,11300,128,3,THE ARCHITECT|THE PRISM,1,Enemy,arc_latticex1,0.3
+arc_lattice,1024,average,11,156.6,11384,124,3,THE ARCHITECT|THE PRISM,1,SwarmNode,arc_latticex1,0.4
+phase_drive,1000,average,11,145.1,13178,142,3,THE ARCHITECT|THE PRISM,1,SwarmNode,phase_drivex1,0.4
+phase_drive,1001,average,14,217.6,28335,285,3,THE ARCHITECT|THE PRISM,1,Splitter,phase_drivex1,0.7
+phase_drive,1002,average,9,105.9,6860,82,3,THE ARCHITECT,1,Hunter,phase_drivex1,0.2
+phase_drive,1003,average,13,200.6,21362,220,3,THE ARCHITECT|THE PRISM,1,Enemy,phase_drivex1,0.5
+phase_drive,1004,average,14,233.6,24637,252,3,THE ARCHITECT|THE PRISM,1,Splitter,phase_drivex1,0.5
+phase_drive,1005,average,17,293.7,41866,403,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Phantom,phase_drivex1,1.0
+phase_drive,1006,average,9,108.0,6538,83,3,THE ARCHITECT,1,Hunter,phase_drivex1,0.3
+phase_drive,1007,average,11,155.3,10962,127,3,THE ARCHITECT|THE PRISM,1,SwarmNode,phase_drivex1,0.4
+phase_drive,1008,average,11,133.6,10193,112,3,THE ARCHITECT|THE PRISM,1,Enemy,phase_drivex1,0.3
+phase_drive,1009,average,9,124.9,8069,97,3,THE ARCHITECT,1,Teleporter,phase_drivex1,0.3
+phase_drive,1010,average,13,168.3,22694,227,3,THE ARCHITECT|THE PRISM,1,SwarmNode,phase_drivex1,0.4
+phase_drive,1011,average,9,104.7,6955,82,3,THE ARCHITECT,1,Enemy,phase_drivex1,0.2
+phase_drive,1012,average,10,135.1,8496,107,3,THE ARCHITECT,1,bullet,phase_drivex1,0.3
+phase_drive,1013,average,10,137.1,8520,111,3,THE ARCHITECT,1,bullet,phase_drivex1,0.4
+phase_drive,1014,average,14,226.7,27705,279,3,THE ARCHITECT|THE PRISM,1,Phantom,phase_drivex1,0.7
+phase_drive,1015,average,12,149.5,15945,169,3,THE ARCHITECT|THE PRISM,1,Teleporter,phase_drivex1,0.4
+phase_drive,1016,average,12,159.7,15869,172,3,THE ARCHITECT|THE PRISM,1,SwarmNode,phase_drivex1,0.5
+phase_drive,1017,average,11,164.2,12773,141,3,THE ARCHITECT|THE PRISM,1,SwarmNode,phase_drivex1,0.4
+phase_drive,1018,average,9,108.8,6518,82,3,THE ARCHITECT,1,SwarmNode,phase_drivex1,0.3
+phase_drive,1019,average,13,179.3,21821,225,3,THE ARCHITECT|THE PRISM,1,SwarmNode,phase_drivex1,0.5
+phase_drive,1020,average,11,156.7,11543,128,3,THE ARCHITECT|THE PRISM,1,Teleporter,phase_drivex1,0.4
+phase_drive,1021,average,11,154.2,10990,122,3,THE ARCHITECT|THE PRISM,1,SwarmNode,phase_drivex1,0.4
+phase_drive,1022,average,11,168.0,10918,124,3,THE ARCHITECT|THE PRISM,1,SwarmNode,phase_drivex1,0.5
+phase_drive,1023,average,9,106.9,7444,91,3,THE ARCHITECT,1,SwarmNode,phase_drivex1,0.2
+phase_drive,1024,average,12,170.6,14904,167,3,THE ARCHITECT|THE PRISM,1,Hunter,phase_drivex1,0.4
+surge,1000,average,14,211.3,28451,287,3,THE ARCHITECT|THE PRISM,1,SwarmNode,surgex1,0.7
+surge,1001,average,12,157.5,13703,152,3,THE ARCHITECT|THE PRISM,1,Teleporter,surgex1,0.4
+surge,1002,average,9,97.9,6706,83,3,THE ARCHITECT,1,SwarmNode,surgex1,0.3
+surge,1003,average,14,184.0,26176,261,3,THE ARCHITECT|THE PRISM,1,SwarmNode,surgex1,0.5
+surge,1004,average,17,276.3,45373,421,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,surgex1,0.8
+surge,1005,average,16,241.4,32768,324,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Hunter,surgex1,0.6
+surge,1006,average,16,226.0,34381,333,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,surgex1,0.7
+surge,1007,average,10,121.9,8830,108,3,THE ARCHITECT,1,bullet,surgex1,0.3
+surge,1008,average,11,141.9,12564,139,3,THE ARCHITECT|THE PRISM,1,Teleporter,surgex1,0.3
+surge,1009,average,10,134.3,9409,110,3,THE ARCHITECT,1,bullet,surgex1,0.3
+surge,1010,average,9,99.0,6738,85,3,THE ARCHITECT,1,SwarmNode,surgex1,0.3
+surge,1011,average,12,147.1,14382,158,3,THE ARCHITECT|THE PRISM,1,Hunter,surgex1,0.4
+surge,1012,average,13,212.3,21323,233,3,THE ARCHITECT|THE PRISM,1,SwarmNode,surgex1,0.6
+surge,1013,average,10,117.9,8333,104,3,THE ARCHITECT,1,bullet,surgex1,0.3
+surge,1014,average,12,151.2,16099,174,3,THE ARCHITECT|THE PRISM,1,SwarmNode,surgex1,0.5
+surge,1015,average,12,166.9,14885,161,3,THE ARCHITECT|THE PRISM,1,Enemy,surgex1,0.5
+surge,1016,average,14,199.9,27453,275,3,THE ARCHITECT|THE PRISM,1,Berserker,surgex1,0.6
+surge,1017,average,17,293.9,45276,422,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,surgex1,0.9
+surge,1018,average,12,163.5,18059,185,3,THE ARCHITECT|THE PRISM,1,Berserker,surgex1,0.5
+surge,1019,average,12,153.6,16860,175,3,THE ARCHITECT|THE PRISM,1,bullet,surgex1,0.4
+surge,1020,average,14,213.2,28114,276,3,THE ARCHITECT|THE PRISM,1,Enemy,surgex1,0.6
+surge,1021,average,10,126.2,8804,107,3,THE ARCHITECT,1,bullet,surgex1,0.3
+surge,1022,average,12,153.2,14742,157,3,THE ARCHITECT|THE PRISM,1,Enemy,surgex1,0.4
+surge,1023,average,9,99.5,6709,79,3,THE ARCHITECT,1,Hunter,surgex1,0.2
+surge,1024,average,13,194.8,18833,199,3,THE ARCHITECT|THE PRISM,1,Teleporter,surgex1,0.6
+salvage,1000,average,12,154.9,14204,158,3,THE ARCHITECT|THE PRISM,1,Hunter,salvagex1,0.4
+salvage,1001,average,10,114.3,8622,106,3,THE ARCHITECT,1,SwarmNode,salvagex1,0.3
+salvage,1002,average,11,143.1,11704,130,3,THE ARCHITECT|THE PRISM,1,Enemy,salvagex1,0.3
+salvage,1003,average,12,165.4,14444,158,3,THE ARCHITECT|THE PRISM,1,Hunter,salvagex1,0.4
+salvage,1004,average,12,171.7,15126,172,3,THE ARCHITECT|THE PRISM,1,SwarmNode,salvagex1,0.5
+salvage,1005,average,12,192.9,16616,176,3,THE ARCHITECT|THE PRISM,1,SwarmNode,salvagex1,0.6
+salvage,1006,average,12,173.1,13546,159,3,THE ARCHITECT|THE PRISM,1,Hunter,salvagex1,0.5
+salvage,1007,average,11,121.7,10435,120,3,THE ARCHITECT|THE PRISM,1,SwarmNode,salvagex1,0.3
+salvage,1008,average,13,191.2,18801,210,3,THE ARCHITECT|THE PRISM,1,ShieldDrone,salvagex1,0.5
+salvage,1009,average,11,135.3,10480,119,3,THE ARCHITECT|THE PRISM,1,SwarmNode,salvagex1,0.3
+salvage,1010,average,13,166.5,18614,203,3,THE ARCHITECT|THE PRISM,1,Hunter,salvagex1,0.4
+salvage,1011,average,13,187.5,18769,209,3,THE ARCHITECT|THE PRISM,1,Phantom,salvagex1,0.5
+salvage,1012,average,13,179.0,21406,227,3,THE ARCHITECT|THE PRISM,1,Enemy,salvagex1,0.5
+salvage,1013,average,11,139.5,11077,128,3,THE ARCHITECT|THE PRISM,1,SwarmNode,salvagex1,0.3
+salvage,1014,average,12,141.2,14570,153,3,THE ARCHITECT|THE PRISM,1,Enemy,salvagex1,0.3
+salvage,1015,average,18,300.0,51466,482,2,THE ARCHITECT|THE PRISM|THE ARCHITECT,0,Berserker,salvagex1,0.8
+salvage,1016,average,12,157.5,14417,157,3,THE ARCHITECT|THE PRISM,1,Teleporter,salvagex1,0.3
+salvage,1017,average,10,128.1,8654,104,3,THE ARCHITECT,1,bullet,salvagex1,0.3
+salvage,1018,average,11,139.8,10958,125,3,THE ARCHITECT|THE PRISM,1,Enemy,salvagex1,0.3
+salvage,1019,average,12,183.6,15887,181,3,THE ARCHITECT|THE PRISM,1,Berserker,salvagex1,0.4
+salvage,1020,average,11,147.7,10695,130,3,THE ARCHITECT|THE PRISM,1,bullet,salvagex1,0.4
+salvage,1021,average,11,154.3,9541,115,3,THE ARCHITECT|THE PRISM,1,Hunter,salvagex1,0.3
+salvage,1022,average,11,147.8,9745,120,3,THE ARCHITECT|THE PRISM,1,SwarmNode,salvagex1,0.4
+salvage,1023,average,13,164.3,18807,201,3,THE ARCHITECT|THE PRISM,1,SwarmNode,salvagex1,0.5
+salvage,1024,average,11,136.1,10813,128,3,THE ARCHITECT|THE PRISM,1,Splitter,salvagex1,0.4
+volatile,1000,average,12,173.0,16553,177,3,THE ARCHITECT|THE PRISM,1,Hunter,volatilex1,0.5
+volatile,1001,average,14,204.6,28497,282,3,THE ARCHITECT|THE PRISM,1,Teleporter,volatilex1,0.6
+volatile,1002,average,14,215.3,27101,270,3,THE ARCHITECT|THE PRISM,1,bullet,volatilex1,0.7
+volatile,1003,average,13,177.1,18878,208,3,THE ARCHITECT|THE PRISM,1,Enemy,volatilex1,0.5
+volatile,1004,average,11,135.0,10745,126,3,THE ARCHITECT|THE PRISM,1,Phantom,volatilex1,0.3
+volatile,1005,average,13,173.3,22058,227,3,THE ARCHITECT|THE PRISM,1,Berserker,volatilex1,0.5
+volatile,1006,average,17,288.0,45706,437,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Teleporter,volatilex1,0.9
+volatile,1007,average,12,150.3,14311,160,3,THE ARCHITECT|THE PRISM,1,Phantom,volatilex1,0.4
+volatile,1008,average,10,137.1,9313,108,3,THE ARCHITECT,1,bullet,volatilex1,0.4
+volatile,1009,average,17,300.0,47442,448,2,THE ARCHITECT|THE PRISM|THE ARCHITECT,0,bullet,volatilex1,1.0
+volatile,1010,average,14,182.3,26339,273,3,THE ARCHITECT|THE PRISM,1,Teleporter,volatilex1,0.6
+volatile,1011,average,14,199.9,29200,287,3,THE ARCHITECT|THE PRISM,1,SwarmNode,volatilex1,0.6
+volatile,1012,average,9,110.1,7881,95,3,THE ARCHITECT,1,Teleporter,volatilex1,0.3
+volatile,1013,average,17,281.8,46399,436,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Enemy,volatilex1,0.8
+volatile,1014,average,12,160.8,14336,166,3,THE ARCHITECT|THE PRISM,1,SwarmNode,volatilex1,0.5
+volatile,1015,average,13,168.3,18838,200,3,THE ARCHITECT|THE PRISM,1,Enemy,volatilex1,0.4
+volatile,1016,average,13,160.5,19216,204,3,THE ARCHITECT|THE PRISM,1,Splitter,volatilex1,0.4
+volatile,1017,average,13,198.4,20204,218,3,THE ARCHITECT|THE PRISM,1,bullet,volatilex1,0.5
+volatile,1018,average,17,251.9,47625,449,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Enemy,volatilex1,0.8
+volatile,1019,average,13,203.0,23561,234,3,THE ARCHITECT|THE PRISM,1,Berserker,volatilex1,0.5
+volatile,1020,average,14,198.8,25115,260,3,THE ARCHITECT|THE PRISM,1,Phantom,volatilex1,0.5
+volatile,1021,average,9,102.5,7051,87,3,THE ARCHITECT,1,Enemy,volatilex1,0.2
+volatile,1022,average,17,300.0,38987,390,2,THE ARCHITECT|THE PRISM|THE ARCHITECT,0,Enemy,volatilex1,1.0
+volatile,1023,average,13,202.3,20001,217,3,THE ARCHITECT|THE PRISM,1,Berserker,volatilex1,0.4
+volatile,1024,average,13,187.5,21713,230,3,THE ARCHITECT|THE PRISM,1,SwarmNode,volatilex1,0.5
+repair,1000,average,13,209.8,21739,235,4,THE ARCHITECT|THE PRISM,1,Teleporter,repairx1,0.6
+repair,1001,average,12,155.3,15485,170,4,THE ARCHITECT|THE PRISM,1,SwarmNode,repairx1,0.4
+repair,1002,average,10,137.4,8832,107,4,THE ARCHITECT,1,bullet,repairx1,0.4
+repair,1003,average,13,200.3,20385,207,4,THE ARCHITECT|THE PRISM,1,Teleporter,repairx1,0.6
+repair,1004,average,12,179.0,15443,163,4,THE ARCHITECT|THE PRISM,1,Splitter,repairx1,0.4
+repair,1005,average,13,199.4,20442,227,4,THE ARCHITECT|THE PRISM,1,Berserker,repairx1,0.5
+repair,1006,average,11,147.4,9745,116,4,THE ARCHITECT|THE PRISM,1,Hunter,repairx1,0.3
+repair,1007,average,12,185.0,15720,174,4,THE ARCHITECT|THE PRISM,1,Enemy,repairx1,0.4
+repair,1008,average,11,136.2,10093,115,4,THE ARCHITECT|THE PRISM,1,Splitter,repairx1,0.3
+repair,1009,average,11,149.8,10941,118,4,THE ARCHITECT|THE PRISM,1,Teleporter,repairx1,0.3
+repair,1010,average,16,241.6,32357,311,4,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Teleporter,repairx1,0.6
+repair,1011,average,9,108.2,7390,89,4,THE ARCHITECT,1,Berserker,repairx1,0.2
+repair,1012,average,10,136.6,8496,107,4,THE ARCHITECT,1,bullet,repairx1,0.3
+repair,1013,average,16,285.0,38721,376,4,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Enemy,repairx1,0.9
+repair,1014,average,12,155.7,14661,168,4,THE ARCHITECT|THE PRISM,1,Phantom,repairx1,0.4
+repair,1015,average,13,171.4,18653,200,4,THE ARCHITECT|THE PRISM,1,Hunter,repairx1,0.5
+repair,1016,average,10,124.5,8805,106,4,THE ARCHITECT,1,bullet,repairx1,0.2
+repair,1017,average,13,202.5,20828,221,4,THE ARCHITECT|THE PRISM,1,Teleporter,repairx1,0.4
+repair,1018,average,11,138.5,11315,132,4,THE ARCHITECT|THE PRISM,1,Phantom,repairx1,0.3
+repair,1019,average,13,175.0,19225,212,4,THE ARCHITECT|THE PRISM,1,Enemy,repairx1,0.5
+repair,1020,average,12,177.1,14556,162,4,THE ARCHITECT|THE PRISM,1,Splitter,repairx1,0.4
+repair,1021,average,11,155.7,10990,122,4,THE ARCHITECT|THE PRISM,1,Splitter,repairx1,0.4
+repair,1022,average,11,171.4,11343,131,4,THE ARCHITECT|THE PRISM,1,Phantom,repairx1,0.4
+repair,1023,average,13,180.2,19292,198,4,THE ARCHITECT|THE PRISM,1,Hunter,repairx1,0.4
+repair,1024,average,12,177.7,13834,153,4,THE ARCHITECT|THE PRISM,1,SwarmNode,repairx1,0.4
+second_wind,1000,average,14,225.8,23905,264,4,THE ARCHITECT|THE PRISM,1,Hunter,second_windx1,0.6
+second_wind,1001,average,11,127.5,11553,130,4,THE ARCHITECT|THE PRISM,1,SwarmNode,second_windx1,0.4
+second_wind,1002,average,12,167.1,14967,159,4,THE ARCHITECT|THE PRISM,1,ShieldDrone,second_windx1,0.5
+second_wind,1003,average,13,203.6,20922,216,4,THE ARCHITECT|THE PRISM,1,Enemy,second_windx1,0.6
+second_wind,1004,average,14,236.0,26208,267,4,THE ARCHITECT|THE PRISM,1,Hunter,second_windx1,0.7
+second_wind,1005,average,14,220.6,23081,257,4,THE ARCHITECT|THE PRISM,1,Hunter,second_windx1,0.6
+second_wind,1006,average,11,157.4,9980,120,4,THE ARCHITECT|THE PRISM,1,bullet,second_windx1,0.4
+second_wind,1007,average,12,187.6,15528,170,4,THE ARCHITECT|THE PRISM,1,SwarmNode,second_windx1,0.5
+second_wind,1008,average,12,159.0,14014,153,4,THE ARCHITECT|THE PRISM,1,Hunter,second_windx1,0.4
+second_wind,1009,average,11,150.8,11341,124,4,THE ARCHITECT|THE PRISM,1,Hunter,second_windx1,0.3
+second_wind,1010,average,16,249.2,35273,340,4,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Splitter,second_windx1,0.7
+second_wind,1011,average,11,149.4,9810,113,4,THE ARCHITECT|THE PRISM,1,Hunter,second_windx1,0.3
+second_wind,1012,average,12,183.9,15180,170,4,THE ARCHITECT|THE PRISM,1,Splitter,second_windx1,0.5
+second_wind,1013,average,16,278.9,32156,321,4,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Hunter,second_windx1,0.8
+second_wind,1014,average,12,154.9,14672,166,4,THE ARCHITECT|THE PRISM,1,Hunter,second_windx1,0.5
+second_wind,1015,average,13,168.7,18754,201,4,THE ARCHITECT|THE PRISM,1,SwarmNode,second_windx1,0.5
+second_wind,1016,average,13,195.9,19814,205,4,THE ARCHITECT|THE PRISM,1,SwarmNode,second_windx1,0.6
+second_wind,1017,average,14,233.9,25137,266,4,THE ARCHITECT|THE PRISM,1,Teleporter,second_windx1,0.6
+second_wind,1018,average,10,137.3,7865,107,4,THE ARCHITECT,1,bullet,second_windx1,0.4
+second_wind,1019,average,13,177.5,19605,214,4,THE ARCHITECT|THE PRISM,1,Enemy,second_windx1,0.5
+second_wind,1020,average,12,181.6,15635,173,4,THE ARCHITECT|THE PRISM,1,Teleporter,second_windx1,0.4
+second_wind,1021,average,11,157.5,11010,123,4,THE ARCHITECT|THE PRISM,1,Splitter,second_windx1,0.5
+second_wind,1022,average,11,173.8,11480,133,4,THE ARCHITECT|THE PRISM,1,Enemy,second_windx1,0.3
+second_wind,1023,average,14,216.9,24919,252,4,THE ARCHITECT|THE PRISM,1,SwarmNode,second_windx1,0.5
+second_wind,1024,average,12,178.7,14250,159,4,THE ARCHITECT|THE PRISM,1,Hunter,second_windx1,0.4
+homing(+prereqs),1000,average,14,173.5,25661,274,3,THE ARCHITECT|THE PRISM,1,Enemy,overclockx1|piercex1|homingx1,0.6
+homing(+prereqs),1001,average,13,143.8,21820,236,3,THE ARCHITECT|THE PRISM,1,Berserker,overclockx1|piercex1|homingx1,0.6
+homing(+prereqs),1002,average,18,238.4,49889,477,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,overclockx1|piercex1|homingx1,1.1
+homing(+prereqs),1003,average,11,116.1,10677,124,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx1|piercex1|homingx1,0.4
+homing(+prereqs),1004,average,14,168.9,24763,264,3,THE ARCHITECT|THE PRISM,1,Enemy,overclockx1|piercex1|homingx1,0.7
+homing(+prereqs),1005,average,12,129.3,15644,163,3,THE ARCHITECT|THE PRISM,1,Splitter,overclockx1|piercex1|homingx1,0.4
+homing(+prereqs),1006,average,16,195.8,33992,327,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,overclockx1|piercex1|homingx1,0.9
+homing(+prereqs),1007,average,16,195.7,32654,331,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Enemy,overclockx1|piercex1|homingx1,0.8
+homing(+prereqs),1008,average,18,240.6,54203,507,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,overclockx1|piercex1|homingx1,1.2
+homing(+prereqs),1009,average,14,169.9,27973,280,3,THE ARCHITECT|THE PRISM,1,ShieldDrone,overclockx1|piercex1|homingx1,0.7
+homing(+prereqs),1010,average,16,193.9,31716,316,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,overclockx1|piercex1|homingx1,0.9
+homing(+prereqs),1011,average,18,239.7,52641,501,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,overclockx1|piercex1|homingx1,1.2
+homing(+prereqs),1012,average,12,135.8,14901,159,3,THE ARCHITECT|THE PRISM,1,Hunter,overclockx1|piercex1|homingx1,0.4
+homing(+prereqs),1013,average,15,188.6,31688,310,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx1|piercex1|homingx1,0.8
+homing(+prereqs),1014,average,13,149.0,20739,217,3,THE ARCHITECT|THE PRISM,1,Teleporter,overclockx1|piercex1|homingx1,0.6
+homing(+prereqs),1015,average,17,228.9,42360,410,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,overclockx1|piercex1|homingx1,1.0
+homing(+prereqs),1016,average,16,198.4,33351,335,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Splitter,overclockx1|piercex1|homingx1,0.9
+homing(+prereqs),1017,average,14,155.2,25986,270,3,THE ARCHITECT|THE PRISM,1,Enemy,overclockx1|piercex1|homingx1,0.6
+homing(+prereqs),1018,average,14,166.2,28399,283,3,THE ARCHITECT|THE PRISM,1,Berserker,overclockx1|piercex1|homingx1,0.5
+homing(+prereqs),1019,average,16,193.0,34887,343,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,overclockx1|piercex1|homingx1,0.8
+homing(+prereqs),1020,average,14,165.9,28706,287,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx1|piercex1|homingx1,0.7
+homing(+prereqs),1021,average,16,223.1,38351,374,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Phantom,overclockx1|piercex1|homingx1,1.0
+homing(+prereqs),1022,average,13,140.3,20788,222,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx1|piercex1|homingx1,0.6
+homing(+prereqs),1023,average,13,142.0,21600,215,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx1|piercex1|homingx1,0.6
+homing(+prereqs),1024,average,12,125.1,15241,168,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx1|piercex1|homingx1,0.6
+prereqs-for-homing,1000,average,12,153.8,14362,166,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx1|piercex1,0.4
+prereqs-for-homing,1001,average,13,166.3,20148,209,3,THE ARCHITECT|THE PRISM,1,Enemy,overclockx1|piercex1,0.5
+prereqs-for-homing,1002,average,12,179.6,15233,154,3,THE ARCHITECT|THE PRISM,1,Hunter,overclockx1|piercex1,0.5
+prereqs-for-homing,1003,average,13,176.4,18352,200,3,THE ARCHITECT|THE PRISM,1,Teleporter,overclockx1|piercex1,0.5
+prereqs-for-homing,1004,average,11,145.1,12194,137,3,THE ARCHITECT|THE PRISM,1,Enemy,overclockx1|piercex1,0.4
+prereqs-for-homing,1005,average,13,156.6,21752,222,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx1|piercex1,0.5
+prereqs-for-homing,1006,average,13,184.4,22057,228,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx1|piercex1,0.5
+prereqs-for-homing,1007,average,13,167.3,20181,210,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx1|piercex1,0.5
+prereqs-for-homing,1008,average,16,253.4,37449,369,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Phantom,overclockx1|piercex1,0.8
+prereqs-for-homing,1009,average,13,180.8,21387,221,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx1|piercex1,0.5
+prereqs-for-homing,1010,average,11,143.3,11883,133,3,THE ARCHITECT|THE PRISM,1,bullet,overclockx1|piercex1,0.4
+prereqs-for-homing,1011,average,16,234.2,32740,327,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Phantom,overclockx1|piercex1,0.6
+prereqs-for-homing,1012,average,12,142.4,16025,173,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx1|piercex1,0.3
+prereqs-for-homing,1013,average,14,209.8,29026,284,3,THE ARCHITECT|THE PRISM,1,bullet,overclockx1|piercex1,0.6
+prereqs-for-homing,1014,average,13,165.2,18740,199,3,THE ARCHITECT|THE PRISM,1,Hunter,overclockx1|piercex1,0.4
+prereqs-for-homing,1015,average,10,115.5,9130,106,3,THE ARCHITECT,1,bullet,overclockx1|piercex1,0.3
+prereqs-for-homing,1016,average,13,166.1,19228,202,3,THE ARCHITECT|THE PRISM,1,Hunter,overclockx1|piercex1,0.5
+prereqs-for-homing,1017,average,13,187.6,19927,213,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx1|piercex1,0.6
+prereqs-for-homing,1018,average,9,107.2,7717,93,3,THE ARCHITECT,1,SwarmNode,overclockx1|piercex1,0.3
+prereqs-for-homing,1019,average,14,213.5,29611,290,3,THE ARCHITECT|THE PRISM,1,bullet,overclockx1|piercex1,0.7
+prereqs-for-homing,1020,average,10,135.0,8706,108,3,THE ARCHITECT,1,bullet,overclockx1|piercex1,0.4
+prereqs-for-homing,1021,average,11,150.5,11487,128,3,THE ARCHITECT|THE PRISM,1,Hunter,overclockx1|piercex1,0.4
+prereqs-for-homing,1022,average,12,142.5,13577,154,3,THE ARCHITECT|THE PRISM,1,Hunter,overclockx1|piercex1,0.4
+prereqs-for-homing,1023,average,13,184.5,22612,234,3,THE ARCHITECT|THE PRISM,1,Enemy,overclockx1|piercex1,0.6
+prereqs-for-homing,1024,average,11,151.2,10951,123,3,THE ARCHITECT|THE PRISM,1,Splitter,overclockx1|piercex1,0.5
+void_bloom(+prereqs),1000,average,16,229.8,33997,326,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Enemy,overclockx2|void_bloomx1,0.7
+void_bloom(+prereqs),1001,average,17,252.6,43913,423,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,overclockx2|void_bloomx1,1.0
+void_bloom(+prereqs),1002,average,14,175.2,24557,252,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx2|void_bloomx1,0.6
+void_bloom(+prereqs),1003,average,14,202.3,24856,265,3,THE ARCHITECT|THE PRISM,1,Hunter,overclockx2|void_bloomx1,0.7
+void_bloom(+prereqs),1004,average,19,298.3,61664,570,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Phantom,overclockx2|void_bloomx1,1.0
+void_bloom(+prereqs),1005,average,16,234.6,35076,336,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Teleporter,overclockx2|void_bloomx1,0.5
+void_bloom(+prereqs),1006,average,17,257.5,44039,421,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Enemy,overclockx2|void_bloomx1,0.7
+void_bloom(+prereqs),1007,average,12,136.0,13559,159,3,THE ARCHITECT|THE PRISM,1,Hunter,overclockx2|void_bloomx1,0.3
+void_bloom(+prereqs),1008,average,10,131.5,8868,107,3,THE ARCHITECT,1,bullet,overclockx2|void_bloomx1,0.2
+void_bloom(+prereqs),1009,average,17,242.7,39994,388,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Enemy,overclockx2|void_bloomx1,0.7
+void_bloom(+prereqs),1010,average,17,238.7,43790,413,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,overclockx2|void_bloomx1,0.8
+void_bloom(+prereqs),1011,average,14,183.1,27958,280,3,THE ARCHITECT|THE PRISM,1,Enemy,overclockx2|void_bloomx1,0.5
+void_bloom(+prereqs),1012,average,17,259.3,42604,420,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,overclockx2|void_bloomx1,0.9
+void_bloom(+prereqs),1013,average,14,200.1,26580,275,3,THE ARCHITECT|THE PRISM,1,Phantom,overclockx2|void_bloomx1,0.6
+void_bloom(+prereqs),1014,average,13,165.5,19789,223,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx2|void_bloomx1,0.5
+void_bloom(+prereqs),1015,average,17,249.8,42839,415,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,overclockx2|void_bloomx1,0.8
+void_bloom(+prereqs),1016,average,17,246.6,43551,423,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,overclockx2|void_bloomx1,0.8
+void_bloom(+prereqs),1017,average,16,220.5,33423,320,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Hunter,overclockx2|void_bloomx1,0.8
+void_bloom(+prereqs),1018,average,13,166.3,19231,215,3,THE ARCHITECT|THE PRISM,1,Phantom,overclockx2|void_bloomx1,0.5
+void_bloom(+prereqs),1019,average,12,145.2,14695,159,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx2|void_bloomx1,0.5
+void_bloom(+prereqs),1020,average,16,235.1,34036,346,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,overclockx2|void_bloomx1,0.8
+void_bloom(+prereqs),1021,average,14,205.5,28032,279,3,THE ARCHITECT|THE PRISM,1,Enemy,overclockx2|void_bloomx1,0.6
+void_bloom(+prereqs),1022,average,13,169.3,22186,227,3,THE ARCHITECT|THE PRISM,1,Hunter,overclockx2|void_bloomx1,0.5
+void_bloom(+prereqs),1023,average,11,140.6,11470,129,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx2|void_bloomx1,0.4
+void_bloom(+prereqs),1024,average,13,175.8,23605,240,3,THE ARCHITECT|THE PRISM,1,bullet,overclockx2|void_bloomx1,0.5
+prereqs-for-void_bloom,1000,average,14,185.4,24850,253,3,THE ARCHITECT|THE PRISM,1,Teleporter,overclockx2,0.6
+prereqs-for-void_bloom,1001,average,14,193.2,26190,278,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx2,0.7
+prereqs-for-void_bloom,1002,average,12,154.2,14254,165,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx2,0.4
+prereqs-for-void_bloom,1003,average,16,246.8,32147,316,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Hunter,overclockx2,0.8
+prereqs-for-void_bloom,1004,average,16,241.5,31979,320,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Teleporter,overclockx2,0.8
+prereqs-for-void_bloom,1005,average,17,245.0,43769,419,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,overclockx2,0.8
+prereqs-for-void_bloom,1006,average,13,169.5,21758,234,3,THE ARCHITECT|THE PRISM,1,Phantom,overclockx2,0.5
+prereqs-for-void_bloom,1007,average,11,117.9,11062,122,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx2,0.4
+prereqs-for-void_bloom,1008,average,14,212.1,28871,290,3,THE ARCHITECT|THE PRISM,1,Enemy,overclockx2,0.6
+prereqs-for-void_bloom,1009,average,18,253.8,52496,493,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,overclockx2,0.8
+prereqs-for-void_bloom,1010,average,16,235.0,33201,323,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Teleporter,overclockx2,0.7
+prereqs-for-void_bloom,1011,average,12,157.6,15497,171,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx2,0.5
+prereqs-for-void_bloom,1012,average,13,164.7,18402,203,3,THE ARCHITECT|THE PRISM,1,Hunter,overclockx2,0.5
+prereqs-for-void_bloom,1013,average,17,265.1,43062,412,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,overclockx2,0.9
+prereqs-for-void_bloom,1014,average,16,232.8,34003,341,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Teleporter,overclockx2,0.8
+prereqs-for-void_bloom,1015,average,16,239.9,33610,325,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Hunter,overclockx2,0.9
+prereqs-for-void_bloom,1016,average,16,230.0,31751,318,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Hunter,overclockx2,0.6
+prereqs-for-void_bloom,1017,average,14,204.7,28877,291,3,THE ARCHITECT|THE PRISM,1,bullet,overclockx2,0.5
+prereqs-for-void_bloom,1018,average,14,193.9,27821,275,3,THE ARCHITECT|THE PRISM,1,Splitter,overclockx2,0.6
+prereqs-for-void_bloom,1019,average,13,159.4,19165,205,3,THE ARCHITECT|THE PRISM,1,SwarmNode,overclockx2,0.5
+prereqs-for-void_bloom,1020,average,16,250.8,37414,360,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Phantom,overclockx2,0.9
+prereqs-for-void_bloom,1021,average,16,252.5,33320,333,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,overclockx2,0.8
+prereqs-for-void_bloom,1022,average,14,209.1,25045,261,3,THE ARCHITECT|THE PRISM,1,Enemy,overclockx2,0.6
+prereqs-for-void_bloom,1023,average,16,240.2,32788,328,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,overclockx2,0.8
+prereqs-for-void_bloom,1024,average,14,189.4,24917,266,3,THE ARCHITECT|THE PRISM,1,Hunter,overclockx2,0.6
+tesla(+prereqs),1000,average,12,167.7,14903,165,3,THE ARCHITECT|THE PRISM,1,Teleporter,arc_latticex2|teslax1,0.4
+tesla(+prereqs),1001,average,11,125.2,10559,115,3,THE ARCHITECT|THE PRISM,1,Hunter,arc_latticex2|teslax1,0.3
+tesla(+prereqs),1002,average,12,167.7,14128,157,3,THE ARCHITECT|THE PRISM,1,Hunter,arc_latticex2|teslax1,0.5
+tesla(+prereqs),1003,average,12,180.1,16101,175,3,THE ARCHITECT|THE PRISM,1,SwarmNode,arc_latticex2|teslax1,0.5
+tesla(+prereqs),1004,average,14,229.1,26576,270,3,THE ARCHITECT|THE PRISM,1,SwarmNode,arc_latticex2|teslax1,0.6
+tesla(+prereqs),1005,average,13,196.9,20307,224,3,THE ARCHITECT|THE PRISM,1,SwarmNode,arc_latticex2|teslax1,0.5
+tesla(+prereqs),1006,average,16,266.9,31480,323,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Hunter,arc_latticex2|teslax1,0.7
+tesla(+prereqs),1007,average,12,159.4,15239,168,3,THE ARCHITECT|THE PRISM,1,SwarmNode,arc_latticex2|teslax1,0.4
+tesla(+prereqs),1008,average,13,188.3,22197,227,3,THE ARCHITECT|THE PRISM,1,Teleporter,arc_latticex2|teslax1,0.6
+tesla(+prereqs),1009,average,9,117.2,7144,83,3,THE ARCHITECT,1,SwarmNode,arc_latticex2|teslax1,0.3
+tesla(+prereqs),1010,average,13,214.8,18771,212,3,THE ARCHITECT|THE PRISM,1,Splitter,arc_latticex2|teslax1,0.5
+tesla(+prereqs),1011,average,12,169.9,18344,183,3,THE ARCHITECT|THE PRISM,1,Enemy,arc_latticex2|teslax1,0.4
+tesla(+prereqs),1012,average,13,217.2,19764,217,3,THE ARCHITECT|THE PRISM,1,Enemy,arc_latticex2|teslax1,0.6
+tesla(+prereqs),1013,average,12,167.3,15763,168,3,THE ARCHITECT|THE PRISM,1,Hunter,arc_latticex2|teslax1,0.5
+tesla(+prereqs),1014,average,10,119.4,8611,104,3,THE ARCHITECT,1,THE PRISM,arc_latticex2|teslax1,0.4
+tesla(+prereqs),1015,average,13,177.2,21349,218,3,THE ARCHITECT|THE PRISM,1,Splitter,arc_latticex2|teslax1,0.4
+tesla(+prereqs),1016,average,10,120.0,8715,104,3,THE ARCHITECT,1,bullet,arc_latticex2|teslax1,0.3
+tesla(+prereqs),1017,average,12,183.5,16502,177,3,THE ARCHITECT|THE PRISM,1,Teleporter,arc_latticex2|teslax1,0.4
+tesla(+prereqs),1018,average,14,230.3,26398,274,3,THE ARCHITECT|THE PRISM,1,ShieldDrone,arc_latticex2|teslax1,0.7
+tesla(+prereqs),1019,average,14,211.5,27211,284,3,THE ARCHITECT|THE PRISM,1,Enemy,arc_latticex2|teslax1,0.6
+tesla(+prereqs),1020,average,12,179.6,16122,174,3,THE ARCHITECT|THE PRISM,1,SwarmNode,arc_latticex2|teslax1,0.5
+tesla(+prereqs),1021,average,13,206.9,22112,230,3,THE ARCHITECT|THE PRISM,1,SwarmNode,arc_latticex2|teslax1,0.5
+tesla(+prereqs),1022,average,13,191.7,19362,197,3,THE ARCHITECT|THE PRISM,1,Hunter,arc_latticex2|teslax1,0.6
+tesla(+prereqs),1023,average,12,144.5,15484,167,3,THE ARCHITECT|THE PRISM,1,Hunter,arc_latticex2|teslax1,0.4
+tesla(+prereqs),1024,average,11,156.6,11384,124,3,THE ARCHITECT|THE PRISM,1,SwarmNode,arc_latticex2|teslax1,0.4
+prereqs-for-tesla,1000,average,13,190.3,19987,211,3,THE ARCHITECT|THE PRISM,1,SwarmNode,arc_latticex2,0.5
+prereqs-for-tesla,1001,average,11,125.2,10559,115,3,THE ARCHITECT|THE PRISM,1,Hunter,arc_latticex2,0.3
+prereqs-for-tesla,1002,average,11,154.0,10465,121,3,THE ARCHITECT|THE PRISM,1,SwarmNode,arc_latticex2,0.4
+prereqs-for-tesla,1003,average,12,180.1,16101,175,3,THE ARCHITECT|THE PRISM,1,SwarmNode,arc_latticex2,0.5
+prereqs-for-tesla,1004,average,14,223.2,25969,250,3,THE ARCHITECT|THE PRISM,1,Enemy,arc_latticex2,0.6
+prereqs-for-tesla,1005,average,13,196.9,20307,224,3,THE ARCHITECT|THE PRISM,1,SwarmNode,arc_latticex2,0.4
+prereqs-for-tesla,1006,average,14,223.6,25685,267,3,THE ARCHITECT|THE PRISM,1,Hunter,arc_latticex2,0.6
+prereqs-for-tesla,1007,average,12,159.4,15239,168,3,THE ARCHITECT|THE PRISM,1,SwarmNode,arc_latticex2,0.4
+prereqs-for-tesla,1008,average,12,176.2,15180,166,3,THE ARCHITECT|THE PRISM,1,Splitter,arc_latticex2,0.5
+prereqs-for-tesla,1009,average,9,130.4,8157,98,3,THE ARCHITECT,1,bullet,arc_latticex2,0.3
+prereqs-for-tesla,1010,average,12,148.3,14872,159,3,THE ARCHITECT|THE PRISM,1,SwarmNode,arc_latticex2,0.4
+prereqs-for-tesla,1011,average,9,102.5,7345,85,3,THE ARCHITECT,1,Enemy,arc_latticex2,0.2
+prereqs-for-tesla,1012,average,13,195.4,20422,219,3,THE ARCHITECT|THE PRISM,1,SwarmNode,arc_latticex2,0.5
+prereqs-for-tesla,1013,average,14,230.0,26764,273,3,THE ARCHITECT|THE PRISM,1,SwarmNode,arc_latticex2,0.7
+prereqs-for-tesla,1014,average,13,174.0,19626,199,3,THE ARCHITECT|THE PRISM,1,Teleporter,arc_latticex2,0.5
+prereqs-for-tesla,1015,average,12,149.0,16075,171,3,THE ARCHITECT|THE PRISM,1,SwarmNode,arc_latticex2,0.4
+prereqs-for-tesla,1016,average,10,120.0,8715,104,3,THE ARCHITECT,1,bullet,arc_latticex2,0.3
+prereqs-for-tesla,1017,average,13,199.8,20305,213,3,THE ARCHITECT|THE PRISM,1,Splitter,arc_latticex2,0.5
+prereqs-for-tesla,1018,average,10,139.8,8765,107,3,THE ARCHITECT,1,bullet,arc_latticex2,0.3
+prereqs-for-tesla,1019,average,13,168.3,19499,212,3,THE ARCHITECT|THE PRISM,1,Enemy,arc_latticex2,0.4
+prereqs-for-tesla,1020,average,13,207.6,21024,226,3,THE ARCHITECT|THE PRISM,1,Teleporter,arc_latticex2,0.5
+prereqs-for-tesla,1021,average,9,111.5,7109,89,3,THE ARCHITECT,1,SwarmNode,arc_latticex2,0.2
+prereqs-for-tesla,1022,average,12,184.2,15111,162,3,THE ARCHITECT|THE PRISM,1,Teleporter,arc_latticex2,0.5
+prereqs-for-tesla,1023,average,12,157.2,14545,152,3,THE ARCHITECT|THE PRISM,1,Hunter,arc_latticex2,0.4
+prereqs-for-tesla,1024,average,11,156.6,11384,124,3,THE ARCHITECT|THE PRISM,1,SwarmNode,arc_latticex2,0.3
+null_lance(+prereqs),1000,average,12,163.2,15347,171,3,THE ARCHITECT|THE PRISM,1,Hunter,surgex1|salvagex1|null_lancex1,0.4
+null_lance(+prereqs),1001,average,11,123.7,9501,117,3,THE ARCHITECT|THE PRISM,1,Hunter,surgex1|salvagex1|null_lancex1,0.3
+null_lance(+prereqs),1002,average,16,231.6,36670,363,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,surgex1|salvagex1|null_lancex1,0.7
+null_lance(+prereqs),1003,average,13,170.6,20672,217,3,THE ARCHITECT|THE PRISM,1,Hunter,surgex1|salvagex1|null_lancex1,0.5
+null_lance(+prereqs),1004,average,11,122.2,9696,118,3,THE ARCHITECT|THE PRISM,1,SwarmNode,surgex1|salvagex1|null_lancex1,0.3
+null_lance(+prereqs),1005,average,13,179.3,20259,218,3,THE ARCHITECT|THE PRISM,1,Hunter,surgex1|salvagex1|null_lancex1,0.5
+null_lance(+prereqs),1006,average,12,146.7,15158,169,3,THE ARCHITECT|THE PRISM,1,SwarmNode,surgex1|salvagex1|null_lancex1,0.4
+null_lance(+prereqs),1007,average,11,108.3,9341,110,3,THE ARCHITECT|THE PRISM,1,Hunter,surgex1|salvagex1|null_lancex1,0.3
+null_lance(+prereqs),1008,average,13,163.0,21841,222,3,THE ARCHITECT|THE PRISM,1,Enemy,surgex1|salvagex1|null_lancex1,0.4
+null_lance(+prereqs),1009,average,11,117.6,10225,123,3,THE ARCHITECT|THE PRISM,1,Splitter,surgex1|salvagex1|null_lancex1,0.3
+null_lance(+prereqs),1010,average,12,153.8,15041,159,3,THE ARCHITECT|THE PRISM,1,Enemy,surgex1|salvagex1|null_lancex1,0.4
+null_lance(+prereqs),1011,average,16,228.7,37764,362,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Enemy,surgex1|salvagex1|null_lancex1,0.7
+null_lance(+prereqs),1012,average,14,204.9,27058,285,3,THE ARCHITECT|THE PRISM,1,SwarmNode,surgex1|salvagex1|null_lancex1,0.6
+null_lance(+prereqs),1013,average,14,195.7,27908,280,3,THE ARCHITECT|THE PRISM,1,Splitter,surgex1|salvagex1|null_lancex1,0.6
+null_lance(+prereqs),1014,average,12,145.5,13545,158,3,THE ARCHITECT|THE PRISM,1,Splitter,surgex1|salvagex1|null_lancex1,0.4
+null_lance(+prereqs),1015,average,13,179.1,23287,241,3,THE ARCHITECT|THE PRISM,1,SwarmNode,surgex1|salvagex1|null_lancex1,0.5
+null_lance(+prereqs),1016,average,17,249.2,47798,449,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,surgex1|salvagex1|null_lancex1,0.8
+null_lance(+prereqs),1017,average,13,162.7,19776,208,3,THE ARCHITECT|THE PRISM,1,Hunter,surgex1|salvagex1|null_lancex1,0.5
+null_lance(+prereqs),1018,average,14,202.9,27324,279,3,THE ARCHITECT|THE PRISM,1,Splitter,surgex1|salvagex1|null_lancex1,0.6
+null_lance(+prereqs),1019,average,12,145.8,15728,178,3,THE ARCHITECT|THE PRISM,1,SwarmNode,surgex1|salvagex1|null_lancex1,0.4
+null_lance(+prereqs),1020,average,17,268.3,45772,436,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Phantom,surgex1|salvagex1|null_lancex1,0.8
+null_lance(+prereqs),1021,average,9,103.1,6557,83,3,THE ARCHITECT,1,Phantom,surgex1|salvagex1|null_lancex1,0.2
+null_lance(+prereqs),1022,average,16,236.9,31734,317,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Hunter,surgex1|salvagex1|null_lancex1,0.7
+null_lance(+prereqs),1023,average,9,91.5,6614,83,3,THE ARCHITECT,1,SwarmNode,surgex1|salvagex1|null_lancex1,0.2
+null_lance(+prereqs),1024,average,14,217.0,27801,281,3,THE ARCHITECT|THE PRISM,1,SwarmNode,surgex1|salvagex1|null_lancex1,0.6
+prereqs-for-null_lance,1000,average,13,172.9,20814,229,3,THE ARCHITECT|THE PRISM,1,ShieldDrone,surgex1|salvagex1,0.5
+prereqs-for-null_lance,1001,average,14,196.5,24766,252,3,THE ARCHITECT|THE PRISM,1,Hunter,surgex1|salvagex1,0.6
+prereqs-for-null_lance,1002,average,11,142.4,11493,134,3,THE ARCHITECT|THE PRISM,1,SwarmNode,surgex1|salvagex1,0.3
+prereqs-for-null_lance,1003,average,11,138.5,10691,129,3,THE ARCHITECT|THE PRISM,1,SwarmNode,surgex1|salvagex1,0.3
+prereqs-for-null_lance,1004,average,14,211.1,26995,286,3,THE ARCHITECT|THE PRISM,1,Enemy,surgex1|salvagex1,0.6
+prereqs-for-null_lance,1005,average,10,121.7,8121,107,3,THE ARCHITECT,1,bullet,surgex1|salvagex1,0.4
+prereqs-for-null_lance,1006,average,13,207.9,20236,229,3,THE ARCHITECT|THE PRISM,1,Enemy,surgex1|salvagex1,0.6
+prereqs-for-null_lance,1007,average,11,105.7,10162,117,3,THE ARCHITECT|THE PRISM,1,SwarmNode,surgex1|salvagex1,0.3
+prereqs-for-null_lance,1008,average,11,124.6,9816,110,3,THE ARCHITECT|THE PRISM,1,Hunter,surgex1|salvagex1,0.3
+prereqs-for-null_lance,1009,average,10,119.1,8478,110,3,THE ARCHITECT,1,bullet,surgex1|salvagex1,0.3
+prereqs-for-null_lance,1010,average,16,233.0,31527,316,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Teleporter,surgex1|salvagex1,0.7
+prereqs-for-null_lance,1011,average,17,276.3,42985,417,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,surgex1|salvagex1,0.9
+prereqs-for-null_lance,1012,average,10,128.2,8240,111,3,THE ARCHITECT,1,bullet,surgex1|salvagex1,0.3
+prereqs-for-null_lance,1013,average,13,189.7,19807,211,3,THE ARCHITECT|THE PRISM,1,Hunter,surgex1|salvagex1,0.6
+prereqs-for-null_lance,1014,average,13,178.2,19437,218,3,THE ARCHITECT|THE PRISM,1,Phantom,surgex1|salvagex1,0.4
+prereqs-for-null_lance,1015,average,16,255.0,32730,334,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,surgex1|salvagex1,0.6
+prereqs-for-null_lance,1016,average,13,204.2,21970,232,3,THE ARCHITECT|THE PRISM,1,Phantom,surgex1|salvagex1,0.6
+prereqs-for-null_lance,1017,average,17,267.5,44697,433,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Splitter,surgex1|salvagex1,0.8
+prereqs-for-null_lance,1018,average,17,264.4,46053,432,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,surgex1|salvagex1,0.7
+prereqs-for-null_lance,1019,average,11,141.7,10083,121,3,THE ARCHITECT|THE PRISM,1,Teleporter,surgex1|salvagex1,0.4
+prereqs-for-null_lance,1020,average,12,145.4,13600,152,3,THE ARCHITECT|THE PRISM,1,Hunter,surgex1|salvagex1,0.4
+prereqs-for-null_lance,1021,average,13,186.7,20123,224,3,THE ARCHITECT|THE PRISM,1,Phantom,surgex1|salvagex1,0.5
+prereqs-for-null_lance,1022,average,12,150.9,13846,157,3,THE ARCHITECT|THE PRISM,1,Enemy,surgex1|salvagex1,0.4
+prereqs-for-null_lance,1023,average,16,252.8,34680,355,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,surgex1|salvagex1,0.8
+prereqs-for-null_lance,1024,average,9,106.1,6559,82,3,THE ARCHITECT,1,Teleporter,surgex1|salvagex1,0.2
+cluster(+prereqs),1000,average,12,171.2,15712,162,3,THE ARCHITECT|THE PRISM,1,Phantom,volatilex1|clusterx1,0.5
+cluster(+prereqs),1001,average,17,278.2,43151,416,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,volatilex1|clusterx1,1.0
+cluster(+prereqs),1002,average,15,231.7,31262,309,3,THE ARCHITECT|THE PRISM,1,Hunter,volatilex1|clusterx1,0.7
+cluster(+prereqs),1003,average,16,261.8,32428,329,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,ShieldDrone,volatilex1|clusterx1,1.0
+cluster(+prereqs),1004,average,13,183.0,20249,219,3,THE ARCHITECT|THE PRISM,1,Teleporter,volatilex1|clusterx1,0.6
+cluster(+prereqs),1005,average,13,166.4,20907,221,3,THE ARCHITECT|THE PRISM,1,SwarmNode,volatilex1|clusterx1,0.4
+cluster(+prereqs),1006,average,17,300.0,50921,460,1,THE ARCHITECT|THE PRISM|THE ARCHITECT,0,bullet,volatilex1|clusterx1,1.0
+cluster(+prereqs),1007,average,13,175.2,20842,221,3,THE ARCHITECT|THE PRISM,1,SwarmNode,volatilex1|clusterx1,0.5
+cluster(+prereqs),1008,average,10,137.1,9313,108,3,THE ARCHITECT,1,bullet,volatilex1|clusterx1,0.3
+cluster(+prereqs),1009,average,12,174.3,16931,180,3,THE ARCHITECT|THE PRISM,1,SwarmNode,volatilex1|clusterx1,0.5
+cluster(+prereqs),1010,average,17,244.0,45678,424,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,volatilex1|clusterx1,0.6
+cluster(+prereqs),1011,average,17,241.3,44788,412,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,volatilex1|clusterx1,0.8
+cluster(+prereqs),1012,average,13,187.0,22816,229,3,THE ARCHITECT|THE PRISM,1,Enemy,volatilex1|clusterx1,0.5
+cluster(+prereqs),1013,average,17,285.9,43600,418,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Teleporter,volatilex1|clusterx1,0.9
+cluster(+prereqs),1014,average,13,179.1,18108,202,3,THE ARCHITECT|THE PRISM,1,Hunter,volatilex1|clusterx1,0.5
+cluster(+prereqs),1015,average,14,192.2,27218,279,3,THE ARCHITECT|THE PRISM,1,Hunter,volatilex1|clusterx1,0.6
+cluster(+prereqs),1016,average,14,194.4,27382,283,3,THE ARCHITECT|THE PRISM,1,Berserker,volatilex1|clusterx1,0.6
+cluster(+prereqs),1017,average,14,232.0,27956,283,3,THE ARCHITECT|THE PRISM,1,Phantom,volatilex1|clusterx1,0.7
+cluster(+prereqs),1018,average,12,145.1,16231,181,3,THE ARCHITECT|THE PRISM,1,Enemy,volatilex1|clusterx1,0.4
+cluster(+prereqs),1019,average,13,194.5,20985,211,3,THE ARCHITECT|THE PRISM,1,Phantom,volatilex1|clusterx1,0.6
+cluster(+prereqs),1020,average,14,193.9,26600,275,3,THE ARCHITECT|THE PRISM,1,Enemy,volatilex1|clusterx1,0.6
+cluster(+prereqs),1021,average,9,102.5,7051,87,3,THE ARCHITECT,1,Enemy,volatilex1|clusterx1,0.3
+cluster(+prereqs),1022,average,14,215.0,25866,266,3,THE ARCHITECT|THE PRISM,1,SwarmNode,volatilex1|clusterx1,0.6
+cluster(+prereqs),1023,average,13,190.0,21713,218,3,THE ARCHITECT|THE PRISM,1,Berserker,volatilex1|clusterx1,0.6
+cluster(+prereqs),1024,average,11,141.8,10412,118,3,THE ARCHITECT|THE PRISM,1,Splitter,volatilex1|clusterx1,0.3
+prereqs-for-cluster,1000,average,12,173.0,16553,177,3,THE ARCHITECT|THE PRISM,1,Hunter,volatilex1,0.4
+prereqs-for-cluster,1001,average,14,204.6,28497,282,3,THE ARCHITECT|THE PRISM,1,Teleporter,volatilex1,0.6
+prereqs-for-cluster,1002,average,14,215.3,27101,270,3,THE ARCHITECT|THE PRISM,1,bullet,volatilex1,0.6
+prereqs-for-cluster,1003,average,13,177.1,18878,208,3,THE ARCHITECT|THE PRISM,1,Enemy,volatilex1,0.5
+prereqs-for-cluster,1004,average,11,135.0,10745,126,3,THE ARCHITECT|THE PRISM,1,Phantom,volatilex1,0.3
+prereqs-for-cluster,1005,average,13,173.3,22058,227,3,THE ARCHITECT|THE PRISM,1,Berserker,volatilex1,0.5
+prereqs-for-cluster,1006,average,17,288.0,45706,437,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Teleporter,volatilex1,1.0
+prereqs-for-cluster,1007,average,12,150.3,14311,160,3,THE ARCHITECT|THE PRISM,1,Phantom,volatilex1,0.4
+prereqs-for-cluster,1008,average,10,137.1,9313,108,3,THE ARCHITECT,1,bullet,volatilex1,0.3
+prereqs-for-cluster,1009,average,17,300.0,47442,448,2,THE ARCHITECT|THE PRISM|THE ARCHITECT,0,bullet,volatilex1,1.0
+prereqs-for-cluster,1010,average,14,182.3,26339,273,3,THE ARCHITECT|THE PRISM,1,Teleporter,volatilex1,0.5
+prereqs-for-cluster,1011,average,14,199.9,29200,287,3,THE ARCHITECT|THE PRISM,1,SwarmNode,volatilex1,0.5
+prereqs-for-cluster,1012,average,9,110.1,7881,95,3,THE ARCHITECT,1,Teleporter,volatilex1,0.2
+prereqs-for-cluster,1013,average,17,281.8,46399,436,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Enemy,volatilex1,0.8
+prereqs-for-cluster,1014,average,12,160.8,14336,166,3,THE ARCHITECT|THE PRISM,1,SwarmNode,volatilex1,0.4
+prereqs-for-cluster,1015,average,13,168.3,18838,200,3,THE ARCHITECT|THE PRISM,1,Enemy,volatilex1,0.4
+prereqs-for-cluster,1016,average,13,160.5,19216,204,3,THE ARCHITECT|THE PRISM,1,Splitter,volatilex1,0.4
+prereqs-for-cluster,1017,average,13,198.4,20204,218,3,THE ARCHITECT|THE PRISM,1,bullet,volatilex1,0.5
+prereqs-for-cluster,1018,average,17,251.9,47625,449,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Enemy,volatilex1,0.8
+prereqs-for-cluster,1019,average,13,203.0,23561,234,3,THE ARCHITECT|THE PRISM,1,Berserker,volatilex1,0.6
+prereqs-for-cluster,1020,average,14,198.8,25115,260,3,THE ARCHITECT|THE PRISM,1,Phantom,volatilex1,0.6
+prereqs-for-cluster,1021,average,9,102.5,7051,87,3,THE ARCHITECT,1,Enemy,volatilex1,0.2
+prereqs-for-cluster,1022,average,17,300.0,38987,390,2,THE ARCHITECT|THE PRISM|THE ARCHITECT,0,Enemy,volatilex1,0.9
+prereqs-for-cluster,1023,average,13,202.3,20001,217,3,THE ARCHITECT|THE PRISM,1,Berserker,volatilex1,0.6
+prereqs-for-cluster,1024,average,13,187.5,21713,230,3,THE ARCHITECT|THE PRISM,1,SwarmNode,volatilex1,0.5

@@ -1,0 +1,31 @@
+condition,seed,skill,wave,seconds,score,kills,hits,bosses,died,cause,perks,wall
+baseline,1000,average,13,205.7,21549,230,3,THE ARCHITECT|THE PRISM,1,Teleporter,,0.6
+baseline,1001,average,11,125.2,10559,115,3,THE ARCHITECT|THE PRISM,1,Hunter,,0.3
+baseline,1002,average,9,105.9,6860,82,3,THE ARCHITECT,1,Hunter,,0.3
+baseline,1003,average,13,198.8,20310,205,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.6
+baseline,1004,average,12,177.5,15348,160,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.5
+baseline,1005,average,13,196.9,20307,224,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.6
+baseline,1006,average,9,108.0,6538,83,3,THE ARCHITECT,1,Hunter,,0.3
+baseline,1007,average,12,179.3,14906,160,3,THE ARCHITECT|THE PRISM,1,Hunter,,0.4
+baseline,1008,average,11,134.2,9933,112,3,THE ARCHITECT|THE PRISM,1,Enemy,,0.3
+baseline,1009,average,11,147.8,10619,112,3,THE ARCHITECT|THE PRISM,1,Hunter,,0.3
+baseline,1010,average,14,202.6,29218,281,3,THE ARCHITECT|THE PRISM,1,Enemy,,0.7
+baseline,1011,average,9,104.7,6955,82,3,THE ARCHITECT,1,Enemy,,0.3
+baseline,1012,average,10,135.1,8496,107,3,THE ARCHITECT,1,bullet,,0.3
+baseline,1013,average,14,233.4,28399,280,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.7
+baseline,1014,average,12,151.8,14194,159,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.4
+baseline,1015,average,12,149.5,15945,169,3,THE ARCHITECT|THE PRISM,1,Teleporter,,0.4
+baseline,1016,average,10,120.0,8715,104,3,THE ARCHITECT,1,bullet,,0.3
+baseline,1017,average,13,199.9,20381,213,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.5
+baseline,1018,average,9,108.8,6518,82,3,THE ARCHITECT,1,SwarmNode,,0.3
+baseline,1019,average,13,172.1,18820,204,3,THE ARCHITECT|THE PRISM,1,Hunter,,0.5
+baseline,1020,average,11,157.9,12776,138,3,THE ARCHITECT|THE PRISM,1,Phantom,,0.4
+baseline,1021,average,11,154.2,10990,122,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.4
+baseline,1022,average,11,168.0,10918,124,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.4
+baseline,1023,average,13,178.7,19197,195,3,THE ARCHITECT|THE PRISM,1,Hunter,,0.5
+baseline,1024,average,11,156.6,11384,124,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.4
+baseline,1025,average,10,135.0,9279,108,3,THE ARCHITECT,1,bullet,,0.4
+baseline,1026,average,9,118.9,8202,98,3,THE ARCHITECT,1,SwarmNode,,0.3
+baseline,1027,average,13,207.1,20450,220,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.5
+baseline,1028,average,13,210.3,19476,205,3,THE ARCHITECT|THE PRISM,1,Enemy,,0.7
+baseline,1029,average,12,187.6,14524,161,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.5

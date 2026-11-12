@@ -1,0 +1,31 @@
+condition,seed,skill,wave,seconds,score,kills,hits,bosses,died,cause,perks,wall
+baseline,1000,skilled,13,177.7,20722,221,3,THE ARCHITECT|THE PRISM,1,Teleporter,,0.8
+baseline,1001,skilled,16,260.7,34262,334,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,Enemy,,1.0
+baseline,1002,skilled,14,229.7,26238,265,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.8
+baseline,1003,skilled,13,199.2,20021,211,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.8
+baseline,1004,skilled,13,199.5,18307,203,3,THE ARCHITECT|THE PRISM,1,Hunter,,0.5
+baseline,1005,skilled,12,182.5,15592,175,3,THE ARCHITECT|THE PRISM,1,Enemy,,0.5
+baseline,1006,skilled,16,249.3,34111,334,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,SwarmNode,,0.8
+baseline,1007,skilled,13,197.8,20980,209,3,THE ARCHITECT|THE PRISM,1,Hunter,,0.6
+baseline,1008,skilled,14,244.5,27047,269,3,THE ARCHITECT|THE PRISM,1,Splitter,,0.8
+baseline,1009,skilled,12,176.6,15679,166,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.5
+baseline,1010,skilled,9,103.9,7275,90,3,THE ARCHITECT,1,Phantom,,0.3
+baseline,1011,skilled,12,175.1,14608,166,3,THE ARCHITECT|THE PRISM,1,Enemy,,0.5
+baseline,1012,skilled,13,185.4,20466,214,3,THE ARCHITECT|THE PRISM,1,Berserker,,0.4
+baseline,1013,skilled,13,190.0,19005,199,3,THE ARCHITECT|THE PRISM,1,Splitter,,0.4
+baseline,1014,skilled,14,202.8,27159,279,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.7
+baseline,1015,skilled,13,193.6,23847,235,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.5
+baseline,1016,skilled,16,274.7,35527,357,3,THE ARCHITECT|THE PRISM|THE ARCHITECT,1,bullet,,1.1
+baseline,1017,skilled,12,157.3,14424,163,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.5
+baseline,1018,skilled,11,138.3,11142,120,3,THE ARCHITECT|THE PRISM,1,Teleporter,,0.3
+baseline,1019,skilled,7,71.2,3886,46,3,THE ARCHITECT,1,bullet,,0.2
+baseline,1020,skilled,14,233.6,24336,256,3,THE ARCHITECT|THE PRISM,1,Phantom,,0.8
+baseline,1021,skilled,13,191.6,20003,216,3,THE ARCHITECT|THE PRISM,1,Enemy,,0.7
+baseline,1022,skilled,11,160.0,10827,124,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.4
+baseline,1023,skilled,8,89.6,4916,58,3,THE ARCHITECT,1,Hunter,,0.2
+baseline,1024,skilled,12,179.4,17445,182,3,THE ARCHITECT|THE PRISM,1,Enemy,,0.6
+baseline,1025,skilled,12,176.9,17110,177,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.7
+baseline,1026,skilled,12,157.4,15372,177,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.6
+baseline,1027,skilled,13,216.6,21514,226,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.7
+baseline,1028,skilled,9,111.1,8038,94,3,THE ARCHITECT,1,SwarmNode,,0.3
+baseline,1029,skilled,13,217.3,21834,225,3,THE ARCHITECT|THE PRISM,1,bullet,,0.7

@@ -1,0 +1,31 @@
+condition,seed,skill,wave,seconds,score,kills,hits,bosses,died,cause,perks,wall
+baseline,1000,novice,11,154.9,10951,117,3,THE ARCHITECT|THE PRISM,1,Hunter,,0.5
+baseline,1001,novice,10,142.9,9275,107,3,THE ARCHITECT,1,bullet,,0.4
+baseline,1002,novice,7,70.9,3731,44,3,THE ARCHITECT,1,SwarmNode,,0.1
+baseline,1003,novice,12,164.5,15310,160,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.4
+baseline,1004,novice,10,142.4,9539,105,3,THE ARCHITECT,1,SwarmNode,,0.3
+baseline,1005,novice,10,144.9,9655,106,3,THE ARCHITECT,1,bullet,,0.3
+baseline,1006,novice,8,87.7,4600,55,3,THE ARCHITECT,1,Hunter,,0.2
+baseline,1007,novice,10,140.6,9167,106,3,THE ARCHITECT,1,bullet,,0.3
+baseline,1008,novice,12,187.5,17447,178,3,THE ARCHITECT|THE PRISM,1,Splitter,,0.6
+baseline,1009,novice,9,119.5,7824,94,3,THE ARCHITECT,1,SwarmNode,,0.3
+baseline,1010,novice,11,130.3,10575,122,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.5
+baseline,1011,novice,11,131.2,10344,113,3,THE ARCHITECT|THE PRISM,1,Hunter,,0.4
+baseline,1012,novice,8,92.5,4941,60,3,THE ARCHITECT,1,Berserker,,0.2
+baseline,1013,novice,10,138.9,9118,105,3,THE ARCHITECT,1,bullet,,0.4
+baseline,1014,novice,9,118.3,7283,89,3,THE ARCHITECT,1,Phantom,,0.3
+baseline,1015,novice,10,124.5,9144,104,3,THE ARCHITECT,1,SwarmNode,,0.3
+baseline,1016,novice,9,111.1,7590,93,3,THE ARCHITECT,1,SwarmNode,,0.3
+baseline,1017,novice,9,121.7,7364,89,3,THE ARCHITECT,1,ShieldDrone,,0.3
+baseline,1018,novice,9,125.7,7541,88,3,THE ARCHITECT,1,Teleporter,,0.3
+baseline,1019,novice,12,172.4,18379,183,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.4
+baseline,1020,novice,12,184.5,17013,178,3,THE ARCHITECT|THE PRISM,1,Enemy,,0.5
+baseline,1021,novice,12,169.9,15367,169,3,THE ARCHITECT|THE PRISM,1,ShieldDrone,,0.5
+baseline,1022,novice,9,109.5,7016,84,3,THE ARCHITECT,1,SwarmNode,,0.3
+baseline,1023,novice,10,132.8,8267,103,3,THE ARCHITECT,1,SwarmNode,,0.4
+baseline,1024,novice,7,75.0,3729,45,3,THE ARCHITECT,1,SwarmNode,,0.1
+baseline,1025,novice,8,94.0,5206,65,3,THE ARCHITECT,1,Enemy,,0.2
+baseline,1026,novice,9,111.9,7490,92,3,THE ARCHITECT,1,SwarmNode,,0.3
+baseline,1027,novice,13,192.0,21367,223,3,THE ARCHITECT|THE PRISM,1,SwarmNode,,0.5
+baseline,1028,novice,9,106.2,7489,90,3,THE ARCHITECT,1,Enemy,,0.2
+baseline,1029,novice,7,72.7,3800,46,3,THE ARCHITECT,1,Teleporter,,0.2
