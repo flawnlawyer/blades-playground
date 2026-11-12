@@ -156,9 +156,7 @@ python tools/gen_docs.py                      # regenerate CONSOLE.md (a test fa
 python tools/stress_bench.py 100 500 1000     # engine benchmark
 ```
 
-### Building a release
 
-See **[RELEASE.md](RELEASE.md)**. Pushing a tag like `v3.0.0` runs the tests on three operating systems, builds binaries with PyInstaller and publishes a GitHub Release.
 
 ---
 
@@ -170,8 +168,9 @@ The fragment pool is the soul of this game. Every line in it is real.
 
 ## Author
 
-**Ayush** (`@flawnlawyer`)
-Open-Source Developer · AI Safety Researcher · BCSIT @ Pokhara University
+**Ayush Ojha** (`@flawnlawyer`)
+Independent Engineer · AI Safety Researcher · Open-Source Developer
+*I build to understand, and understand to build what doesn't exist.*
 → [github.com/flawnlawyer](https://github.com/flawnlawyer)
 
 ## License
