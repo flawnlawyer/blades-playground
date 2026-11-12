@@ -32,6 +32,3 @@ main.build/
 main.dist/
 main.exe
 *.exe
-CHANGELOG.md
-RELEASE_NOTES.md
-RELEASE.md
